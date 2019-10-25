@@ -1,8 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import * as fs from 'fs'
 import {createDeployment, Deployment} from 'now-client'
-import * as path from 'path'
 
 const zeitToken = core.getInput('nowToken')
 const scope = core.getInput('scope')
@@ -37,13 +35,6 @@ enum GithubDeploymentStatus {
   IN_PROGRESS = 'IN_PROGRESS',
 }
 
-const appPath = path.resolve(app)
-if (!fs.existsSync(app)) {
-  throw new Error(`App path is invalid: ${appPath}`)
-} else {
-  process.chdir(appPath)
-}
-
 const deploymentOptions = {
   version: 2,
   name: appName,
@@ -63,7 +54,7 @@ const deploymentOptions = {
   teamId: 'placeshaker',
   force: true,
   isDirectory: true,
-  path: '.',
+  path: app,
   github: {
     enabled: true,
     autoAlias: true,
@@ -197,7 +188,7 @@ const deploy = async (): Promise<void> => {
 
   let githubDeployment: any
 
-  for await (const event of createDeployment(appPath, deploymentOptions)) {
+  for await (const event of createDeployment(app, deploymentOptions)) {
     const {payload, type} = event
     try {
       if (type === 'created') {
