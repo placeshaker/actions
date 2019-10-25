@@ -7,7 +7,7 @@ logs
 npm-debug.log*
 
 # Dependency directories
-node_modules/
+#node_modules/
 
 # Typescript v1 declaration files
 typings/
@@ -17,5 +17,6 @@ typings/
 
 # Optional eslint cache
 .eslintcache
-dist/
+#dist/
 .DS_Store
+# node_modules
