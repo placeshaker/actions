@@ -17,7 +17,7 @@
     "url": "git+https://github.com/placeshaker/actions.git"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "ncc build src/index.ts -o dist",
     "test": "tsc --noEmit && jest",
     "lint": "eslint . --ext .ts --fix",
     "postinstall": "npm run build"
@@ -29,6 +29,7 @@
     "@actions/core": "^1.2.0",
     "@actions/exec": "^1.0.1",
     "@actions/github": "^1.1.0",
+    "@zeit/ncc": "^0.20.5",
     "cli-color": "^2.0.0",
     "firebase-tools": "^7.6.1",
     "js-yaml": "^3.13.1",

@@ -1,5 +1,6 @@
 name: "Articho Deployment"
 description: "This action make a deployment with github actions to the implied apps from articho."
+author: "Ibrael Espinosa"
 inputs:
   nowToken:
     description: "zeit.co token"
@@ -27,7 +28,7 @@ outputs:
 
 runs:
   using: node12
-  main: ./dist/index.js
+  main: "dist/index.js"
 
 branding:
   icon: "check"
