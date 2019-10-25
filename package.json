@@ -1,32 +1,56 @@
 {
   "name": "@placeshaker/actions",
-  "private": true,
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "1.1.2",
+  "description": "Deployment tools",
+  "author": "Ibrael Espinosa <ibrael@placeshaker.fr>",
+  "homepage": "https://github.com/placeshaker/actions#readme",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/placeshaker/actions.git"
+  },
   "scripts": {
     "build": "tsc",
     "test": "tsc --noEmit && jest",
-    "lint": "eslint . --ext .ts --fix"
+    "lint": "eslint . --ext .ts --fix",
+    "postinstall": "npm run build"
   },
-  "license": "ISC",
-  "keywords": [],
-  "author": "Ibrael Espinosa<ibrael@placeshaker.fr>",
-  "devDependencies": {
+  "bugs": {
+    "url": "https://github.com/placeshaker/actions/issues"
+  },
+  "dependencies": {
     "@actions/core": "^1.2.0",
+    "@actions/exec": "^1.0.1",
     "@actions/github": "^1.1.0",
+    "cli-color": "^2.0.0",
+    "firebase-tools": "^7.6.1",
+    "js-yaml": "^3.13.1",
+    "log-symbols": "^3.0.0",
+    "now": "^16.4.1",
+    "now-client": "5.2.1"
+  },
+  "devDependencies": {
     "@types/jest": "^24.0.19",
     "@types/js-yaml": "^3.12.1",
-    "@types/node": "^12.11.6",
+    "@types/node": "^12.11.7",
     "@typescript-eslint/eslint-plugin": "^2.5.0",
     "@typescript-eslint/parser": "^2.5.0",
     "eslint": "^6.5.1",
     "eslint-config-prettier": "^6.4.0",
     "eslint-plugin-prettier": "^3.1.1",
     "jest": "^24.9.0",
-    "js-yaml": "^3.13.1",
     "prettier": "^1.18.2",
     "ts-jest": "^24.1.0",
     "typescript": "^3.6.4"
+  },
+  "peerDependencies": {
+    "@types/node-fetch": "2"
   }
 }

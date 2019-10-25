@@ -1,0 +1,34 @@
+name: "Articho Deployment"
+description: "This action make a deployment with github actions to the implied apps from articho."
+inputs:
+  nowToken:
+    description: "zeit.co token"
+    required: true
+  app:
+    description: "The package app to deploy"
+    required: true
+  appName:
+    description: "The application name in now.sh"
+    required: true
+  scope:
+    description: "This is required if your deployment is made on team project."
+    required: false
+  prod:
+    description: "Is production deployment"
+    required: false
+    default: false
+
+  githubToken:
+    required: true
+
+outputs:
+  previewUrl:
+    description: "deployment preview URL"
+
+runs:
+  using: node12
+  main: dist/deploy.js
+
+branding:
+  icon: "check"
+  color: "black"
