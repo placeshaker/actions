@@ -27,7 +27,7 @@ outputs:
 
 runs:
   using: node12
-  main: dist/deploy.js
+  main: ./dist/deploy.js
 
 branding:
   icon: "check"
