@@ -21,6 +21,7 @@ inputs:
   alias:
     description: array of alias domains to be deployed on production
     required: false
+    default: []
 
   githubToken:
     required: true
