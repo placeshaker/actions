@@ -35,12 +35,14 @@
     "js-yaml": "^3.13.1",
     "log-symbols": "^3.0.0",
     "now": "^16.4.1",
-    "now-client": "5.2.1"
+    "now-client": "5.2.1",
+    "signale": "^1.4.0"
   },
   "devDependencies": {
     "@types/jest": "^24.0.19",
     "@types/js-yaml": "^3.12.1",
     "@types/node": "^12.11.7",
+    "@types/signale": "^1.2.1",
     "@typescript-eslint/eslint-plugin": "^2.5.0",
     "@typescript-eslint/parser": "^2.5.0",
     "eslint": "^6.5.1",

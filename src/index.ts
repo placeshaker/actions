@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {createDeployment, Deployment} from 'now-client'
+import signale from 'signale'
 
 const zeitToken = core.getInput('nowToken')
 const scope = core.getInput('scope')
@@ -13,7 +14,7 @@ const octokit = new github.GitHub(githubToken)
 
 const context = github.context
 
-console.log(github, context, process.cwd())
+signale.debug(github, context, process.cwd())
 
 enum GithubDeploymentStatus {
   // The deployment is pending.
@@ -56,7 +57,7 @@ const deploymentOptions = {
   teamId: 'placeshaker',
   force: true,
   isDirectory: true,
-  path: app ? app: undefined,
+  path: app ? app : undefined,
   github: {
     enabled: true,
     autoAlias: true,
@@ -80,6 +81,13 @@ const deploymentOptions = {
 }
 
 const createGithubDeployment = async (payload: Deployment): Promise<void> => {
+  const variables = {
+    owner: context.repo.owner,
+    name: context.repo.repo,
+    pr: context.payload.number,
+  }
+
+  signale.debug('Consulting repo information with variables', variables)
   const {data: repoData} = await octokit.graphql(
     `
     query($owner: String!, $name: String!, $pr: Int!){
@@ -91,12 +99,10 @@ const createGithubDeployment = async (payload: Deployment): Promise<void> => {
       }
     }
     `,
-    {
-      owner: context.repo.owner,
-      name: context.repo.repo,
-      pr: context.payload.pull_request && context.payload.pull_request.number,
-    },
+    variables,
   )
+
+  signale.success('Got repo data', repoData)
 
   const input = {
     // The node ID of the repository.
@@ -126,24 +132,28 @@ const createGithubDeployment = async (payload: Deployment): Promise<void> => {
 
     clientMutationId: String,
   }
-
-  const {data} = await octokit.graphql(
-    `
-    mutation ($input: CreateDeploymentInput){
-      createDeployment(input: $input) {
-        deployment {
-          id
-          latestStatus {
-            environmentUrl
+  try {
+    signale.debug('Creating github deployment with data', input)
+    const {data} = await octokit.graphql(
+      `
+      mutation ($input: CreateDeploymentInput){
+        createDeployment(input: $input) {
+          deployment {
+            id
+            latestStatus {
+              environmentUrl
+            }
           }
         }
       }
-    }
-    `,
-    input,
-  )
-
-  return data
+      `,
+      input,
+    )
+    signale.success('Created deployment', data)
+    return data
+  } catch (e) {
+    signale.fatal('Error creating deployment', e)
+  }
 }
 
 const updateDeploymentStatus = async (
@@ -161,8 +171,10 @@ const updateDeploymentStatus = async (
     environmentUrl,
   }
 
-  const {data: status} = await octokit.graphql(
-    `
+  signale.debug('Updating github deployment state', deploymentId, state, environment, logUrl, environmentUrl)
+  try {
+    const {data: status} = await octokit.graphql(
+      `
     mutation ($input: CreateDeploymentStatusInput!) {
       createDeploymentStatus(input: $input) {
         deploymentStatus {
@@ -174,40 +186,34 @@ const updateDeploymentStatus = async (
       }
     }
     `,
-    {
-      input,
-    },
-  )
+      {
+        input,
+      },
+    )
 
-  return status
+    return status
+  } catch (e) {
+    signale.fatal('Error while updating repo state', e)
+  }
 }
 
 /**
  * Start deploying
  */
 const deploy = async (): Promise<void> => {
-  core.info(JSON.stringify(deploymentOptions, null, 2))
+  signale.debug('Starting now deployment with data', deploymentOptions)
 
   let githubDeployment: any
 
   for await (const event of createDeployment(app, deploymentOptions)) {
     const {payload, type} = event
     try {
+      signale.debug('Received event ' + event.type, event)
       if (type === 'created') {
         githubDeployment = await createGithubDeployment(payload)
-        core.info(JSON.stringify(githubDeployment, null, 2))
       } else {
         let state: string = GithubDeploymentStatus.INACTIVE
         switch (payload.readyState) {
-          case 'ANALYZING':
-            state = GithubDeploymentStatus.QUEUED
-            break
-          case 'BUILDING':
-            state = GithubDeploymentStatus.PENDING
-            break
-          case 'INITIALIZING':
-            state = GithubDeploymentStatus.QUEUED
-            break
           case 'DEPLOYING':
             state = GithubDeploymentStatus.IN_PROGRESS
             break
@@ -223,9 +229,12 @@ const deploy = async (): Promise<void> => {
             break
         }
 
-        updateDeploymentStatus(githubDeployment.id, state, payload.target, payload.deploymentId, payload.url)
+        if (githubDeployment) {
+          updateDeploymentStatus(githubDeployment.id, state, payload.target, payload.deploymentId, payload.url)
+        }
       }
     } catch (e) {
+      signale.fatal('Received error', e)
       updateDeploymentStatus(
         githubDeployment.id,
         GithubDeploymentStatus.FAILURE,
