@@ -7027,6 +7027,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const path = __importStar(__webpack_require__(622));
 const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 const now_client_1 = __webpack_require__(380);
@@ -7193,7 +7194,8 @@ const updateDeploymentStatus = async (deploymentId, state, environment, logUrl, 
 const deploy = async () => {
     signale_1.default.debug('Starting now deployment with data', deploymentOptions);
     let githubDeployment;
-    for await (const event of now_client_1.createDeployment(app, deploymentOptions)) {
+    const appPath = path.resolve(process.cwd(), app);
+    for await (const event of now_client_1.createDeployment(appPath, deploymentOptions)) {
         const { payload, type } = event;
         try {
             signale_1.default.debug('Received event ' + event.type, event);
@@ -7217,13 +7219,13 @@ const deploy = async () => {
                         break;
                 }
                 if (githubDeployment) {
-                    updateDeploymentStatus(githubDeployment.id, state, payload.target, payload.deploymentId, payload.url);
+                    await updateDeploymentStatus(githubDeployment.id, state, payload.target, payload.deploymentId, payload.url);
                 }
             }
         }
         catch (e) {
             signale_1.default.fatal('Received error', e);
-            updateDeploymentStatus(githubDeployment.id, GithubDeploymentStatus.FAILURE, payload.target, payload.deploymentId, payload.url);
+            await updateDeploymentStatus(githubDeployment.id, GithubDeploymentStatus.FAILURE, payload.target, payload.deploymentId, payload.url);
         }
     }
 };

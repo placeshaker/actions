@@ -1,3 +1,4 @@
+import * as path from 'path'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {createDeployment, Deployment} from 'now-client'
@@ -205,7 +206,9 @@ const deploy = async (): Promise<void> => {
 
   let githubDeployment: any
 
-  for await (const event of createDeployment(app, deploymentOptions)) {
+  const appPath = path.resolve(process.cwd(), app);
+
+  for await (const event of createDeployment(appPath, deploymentOptions)) {
     const {payload, type} = event
     try {
       signale.debug('Received event ' + event.type, event)
@@ -230,12 +233,12 @@ const deploy = async (): Promise<void> => {
         }
 
         if (githubDeployment) {
-          updateDeploymentStatus(githubDeployment.id, state, payload.target, payload.deploymentId, payload.url)
+          await updateDeploymentStatus(githubDeployment.id, state, payload.target, payload.deploymentId, payload.url)
         }
       }
     } catch (e) {
       signale.fatal('Received error', e)
-      updateDeploymentStatus(
+      await updateDeploymentStatus(
         githubDeployment.id,
         GithubDeploymentStatus.FAILURE,
         payload.target,
