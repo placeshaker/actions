@@ -7061,7 +7061,7 @@ var GithubDeploymentStatus;
     GithubDeploymentStatus["IN_PROGRESS"] = "IN_PROGRESS";
 })(GithubDeploymentStatus || (GithubDeploymentStatus = {}));
 const nowJsonOptions = {
-    alias: prod ? aliases : [],
+    alias: prod ? [aliases] : [],
     scope,
     meta: {
         name: `pr-${context.payload.number || 'test'}`,
