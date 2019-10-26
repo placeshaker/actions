@@ -7032,6 +7032,7 @@ const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 const now_client_1 = __webpack_require__(380);
 const signale_1 = __importDefault(__webpack_require__(759));
+signale_1.default.success(process.env);
 const zeitToken = core.getInput('nowToken');
 const scope = core.getInput('scope');
 const app = core.getInput('app');
@@ -7042,7 +7043,6 @@ const aliases = core.getInput('alias');
 const githubToken = core.getInput('githubToken');
 const octokit = new github.GitHub(githubToken);
 const context = github.context;
-signale_1.default.debug(github, context, process.cwd());
 var GithubDeploymentStatus;
 (function (GithubDeploymentStatus) {
     // The deployment is pending.
@@ -7062,17 +7062,18 @@ var GithubDeploymentStatus;
 })(GithubDeploymentStatus || (GithubDeploymentStatus = {}));
 const nowJsonOptions = {
     alias: prod ? aliases : [],
+    scope,
     meta: {
-        name: `pr-${context.payload.number}`,
-        githubCommitSha: context.sha,
-        githubCommitAuthorName: context.actor,
-        githubCommitAuthorLogin: context.actor,
-        githubDeployment: 1,
-        githubOrg: context.repo.owner,
-        githubRepo: context.repo.repo,
-        githubCommitOrg: context.repo.owner,
-        githubCommitRepo: context.repo.repo,
-        pr: context.payload.number,
+        name: `pr-${context.payload.number || 'test'}`,
+        githubCommitSha: context.sha || 'test',
+        githubCommitAuthorName: context.actor || 'test',
+        githubCommitAuthorLogin: context.actor || 'test',
+        githubDeployment: "1",
+        githubOrg: context.repo.owner || 'test',
+        githubRepo: context.repo.repo || 'test',
+        githubCommitOrg: context.repo.owner || 'test',
+        githubCommitRepo: context.repo.repo || 'test',
+        pr: context.payload.number || "1",
     },
     github: {
         enabled: true,
@@ -7080,6 +7081,7 @@ const nowJsonOptions = {
         silent: false,
         autoJobCancelation: true,
     },
+    public: false,
 };
 const deploymentOptions = {
     version: 2,
@@ -7093,12 +7095,12 @@ const deploymentOptions = {
     ],
     target: prod ? 'production' : 'staging',
     token: zeitToken,
-    teamId: 'placeshaker',
+    // teamId: 'placeshaker',
     force: true,
-    isDirectory: true,
-    path: app ? path.join(process.cwd(), app) : undefined,
-    scope,
-    public: false,
+    // isDirectory: true,
+    // path: app ? path.join(process.cwd(), app) : undefined,
+    // scope,
+    // public: false,
     debug: true
 };
 const createGithubDeployment = async (payload) => {
@@ -7140,7 +7142,7 @@ const createGithubDeployment = async (payload) => {
         clientMutationId: String,
     };
     try {
-        signale_1.default.debug('Creating github deployment with data', input);
+        signale_1.default.debug('Creating github deployment with data', input, nowJsonOptions);
         const { data } = await octokit.graphql(`
       mutation ($input: CreateDeploymentInput){
         createDeployment(input: $input) {
@@ -7195,7 +7197,7 @@ const updateDeploymentStatus = async (deploymentId, state, environment, logUrl, 
  * Start deploying
  */
 const deploy = async () => {
-    signale_1.default.debug('Starting now deployment with data', deploymentOptions);
+    signale_1.default.debug('Starting now deployment with data', deploymentOptions, nowJsonOptions);
     let githubDeployment;
     const appPath = path.resolve(process.cwd(), app);
     for await (const event of now_client_1.createDeployment(appPath, deploymentOptions, nowJsonOptions)) {
