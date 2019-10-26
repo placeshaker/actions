@@ -7058,36 +7058,10 @@ var GithubDeploymentStatus;
     // The deployment is in progress.
     GithubDeploymentStatus["IN_PROGRESS"] = "IN_PROGRESS";
 })(GithubDeploymentStatus || (GithubDeploymentStatus = {}));
-const deploymentOptions = {
-    version: 2,
-    name: appName,
+const nowJsonOptions = {
     alias: [`pr-${context.payload.number}`],
-    regions: ['bru1'],
-    builds: [
-        {
-            src: 'package.json',
-            use: '@now/next',
-            config: {
-                '--prefer-offline': false,
-            },
-        },
-    ],
-    target: prod ? 'production' : 'staging',
-    token: zeitToken,
-    teamId: 'placeshaker',
-    force: true,
-    isDirectory: true,
-    path: app ? app : undefined,
-    github: {
-        enabled: true,
-        autoAlias: true,
-        silent: false,
-        autoJobCancelation: true,
-    },
-    scope,
-    public: false,
-    debug: true,
     meta: {
+        name: `pr-${context.payload.number}`,
         githubCommitSha: context.sha,
         githubCommitAuthorName: context.actor,
         githubCommitAuthorLogin: context.actor,
@@ -7098,6 +7072,32 @@ const deploymentOptions = {
         githubCommitRepo: context.repo.repo,
         pr: context.payload.number,
     },
+    github: {
+        enabled: true,
+        autoAlias: true,
+        silent: false,
+        autoJobCancelation: true,
+    },
+};
+const deploymentOptions = {
+    version: 2,
+    name: appName,
+    regions: ['bru1'],
+    builds: [
+        {
+            src: 'package.json',
+            use: '@now/next'
+        },
+    ],
+    target: prod ? 'production' : 'staging',
+    token: zeitToken,
+    teamId: 'placeshaker',
+    force: true,
+    isDirectory: true,
+    path: app ? path.join(process.cwd(), app) : undefined,
+    scope,
+    public: false,
+    debug: true
 };
 const createGithubDeployment = async (payload) => {
     const variables = {
@@ -7195,10 +7195,12 @@ const deploy = async () => {
     signale_1.default.debug('Starting now deployment with data', deploymentOptions);
     let githubDeployment;
     const appPath = path.resolve(process.cwd(), app);
-    for await (const event of now_client_1.createDeployment(appPath, deploymentOptions)) {
+    for await (const event of now_client_1.createDeployment(appPath, deploymentOptions, nowJsonOptions)) {
         const { payload, type } = event;
         try {
-            signale_1.default.debug('Received event ' + event.type, event);
+            if (event.type !== 'hashes-calculated') {
+                signale_1.default.debug('Received event ' + event.type, event);
+            }
             if (type === 'created') {
                 githubDeployment = await createGithubDeployment(payload);
             }

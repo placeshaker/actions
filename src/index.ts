@@ -1,7 +1,7 @@
 import * as path from 'path'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {createDeployment, Deployment} from 'now-client'
+import {createDeployment, Deployment, DeploymentOptions} from 'now-client'
 import signale from 'signale'
 
 const zeitToken = core.getInput('nowToken')
@@ -39,36 +39,10 @@ enum GithubDeploymentStatus {
   IN_PROGRESS = 'IN_PROGRESS',
 }
 
-const deploymentOptions = {
-  version: 2,
-  name: appName,
+const nowJsonOptions = {
   alias: [`pr-${context.payload.number}`],
-  regions: ['bru1'],
-  builds: [
-    {
-      src: 'package.json',
-      use: '@now/next',
-      config: {
-        '--prefer-offline': false,
-      },
-    },
-  ],
-  target: prod ? 'production' : 'staging',
-  token: zeitToken,
-  teamId: 'placeshaker',
-  force: true,
-  isDirectory: true,
-  path: app ? app : undefined,
-  github: {
-    enabled: true,
-    autoAlias: true,
-    silent: false,
-    autoJobCancelation: true,
-  },
-  scope,
-  public: false,
-  debug: true,
   meta: {
+    name: `pr-${context.payload.number}`,
     githubCommitSha: context.sha,
     githubCommitAuthorName: context.actor,
     githubCommitAuthorLogin: context.actor,
@@ -79,6 +53,33 @@ const deploymentOptions = {
     githubCommitRepo: context.repo.repo,
     pr: context.payload.number,
   },
+  github: {
+    enabled: true,
+    autoAlias: true,
+    silent: false,
+    autoJobCancelation: true,
+  },
+}
+
+const deploymentOptions: DeploymentOptions = {
+  version: 2,
+  name: appName,
+  regions: ['bru1'],
+  builds: [
+    {
+      src: 'package.json',
+      use: '@now/next'
+    },
+  ],
+  target: prod ? 'production' : 'staging',
+  token: zeitToken,
+  teamId: 'placeshaker',
+  force: true,
+  isDirectory: true,
+  path: app ? path.join(process.cwd(), app) : undefined,
+  scope,
+  public: false,
+  debug: true
 }
 
 const createGithubDeployment = async (payload: Deployment): Promise<void> => {
@@ -208,10 +209,12 @@ const deploy = async (): Promise<void> => {
 
   const appPath = path.resolve(process.cwd(), app);
 
-  for await (const event of createDeployment(appPath, deploymentOptions)) {
+  for await (const event of createDeployment(appPath, deploymentOptions, nowJsonOptions)) {
     const {payload, type} = event
     try {
-      signale.debug('Received event ' + event.type, event)
+      if(event.type !== 'hashes-calculated') {
+        signale.debug('Received event ' + event.type, event)
+      }
       if (type === 'created') {
         githubDeployment = await createGithubDeployment(payload)
       } else {
