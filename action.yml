@@ -4,7 +4,7 @@ author: "Ibrael Espinosa"
 inputs:
   github_token:
     required: true
-    description: The github token to send deployments to the api 
+    description: The github token to send deployments to the api
   nowToken:
     description: "zeit.co token"
     required: true
