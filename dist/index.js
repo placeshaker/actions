@@ -7073,7 +7073,7 @@ const nowJsonOptions = {
         githubRepo: context.repo.repo || 'test',
         githubCommitOrg: context.repo.owner || 'test',
         githubCommitRepo: context.repo.repo || 'test',
-        pr: context.payload.number || "1",
+        pr: `${context.payload.number || 1}`,
     },
     github: {
         enabled: true,
