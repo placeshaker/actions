@@ -5773,7 +5773,7 @@ const deploymentOptions = {
     teamId: 'placeshaker',
     force: true,
     isDirectory: true,
-    path: app,
+    path: app ? app : undefined,
     github: {
         enabled: true,
         autoAlias: true,
