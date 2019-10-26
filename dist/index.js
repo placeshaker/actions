@@ -7226,6 +7226,7 @@ const deploy = async () => {
         catch (e) {
             signale_1.default.fatal('Received error', e);
             await updateDeploymentStatus(githubDeployment.id, GithubDeploymentStatus.FAILURE, payload.target, payload.deploymentId, payload.url);
+            throw e;
         }
     }
 };

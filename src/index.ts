@@ -245,6 +245,8 @@ const deploy = async (): Promise<void> => {
         payload.deploymentId,
         payload.url,
       )
+
+      throw e
     }
   }
 }
