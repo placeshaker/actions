@@ -2,6 +2,9 @@ name: "Articho Deployment"
 description: "This action make a deployment with github actions to the implied apps from articho."
 author: "Ibrael Espinosa"
 inputs:
+  github_token:
+    required: true
+    description: The github token to send deployments to the api 
   nowToken:
     description: "zeit.co token"
     required: true

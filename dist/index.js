@@ -7040,7 +7040,7 @@ const appName = core.getInput('appName');
 signale_1.default.success("Prod?", core.getInput('prod'));
 const prod = !['', '0', 'false'].includes(core.getInput('prod'));
 const aliases = core.getInput('alias');
-const githubToken = core.getInput('githubToken');
+const githubToken = core.getInput('github_token');
 const octokit = new github.GitHub(githubToken);
 const context = github.context;
 var GithubDeploymentStatus;
