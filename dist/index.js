@@ -5757,7 +5757,7 @@ var GithubDeploymentStatus;
 const deploymentOptions = {
     version: 2,
     name: appName,
-    alias: [],
+    alias: [`pr-${context.payload.number}`],
     regions: ['bru1'],
     builds: [
         {
@@ -5792,7 +5792,7 @@ const deploymentOptions = {
         githubRepo: context.repo.repo,
         githubCommitOrg: context.repo.owner,
         githubCommitRepo: context.repo.repo,
-        githubCommitMessage: context.payload.head_commit.message,
+        pr: context.payload.number,
     },
 };
 const createGithubDeployment = async (payload) => {
