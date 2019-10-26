@@ -8,7 +8,8 @@ const zeitToken = core.getInput('nowToken')
 const scope = core.getInput('scope')
 const app = core.getInput('app')
 const appName = core.getInput('appName')
-const prod = Boolean(core.getInput('prod'))
+signale.success("Prod?", core.getInput('prod'))
+const prod = !['', '0', 'false'].includes(core.getInput('prod'))
 const aliases = core.getInput('alias');
 const githubToken = core.getInput('githubToken')
 
@@ -197,6 +198,7 @@ const updateDeploymentStatus = async (
     return status
   } catch (e) {
     signale.fatal('Error while updating repo state', e)
+    throw e;
   }
 }
 
@@ -256,5 +258,6 @@ const deploy = async (): Promise<void> => {
 }
 
 deploy().catch(error => {
+  signale.fatal(error)
   core.setFailed(error.message)
 })

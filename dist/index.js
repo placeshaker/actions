@@ -7036,7 +7036,8 @@ const zeitToken = core.getInput('nowToken');
 const scope = core.getInput('scope');
 const app = core.getInput('app');
 const appName = core.getInput('appName');
-const prod = Boolean(core.getInput('prod'));
+signale_1.default.success("Prod?", core.getInput('prod'));
+const prod = !['', '0', 'false'].includes(core.getInput('prod'));
 const aliases = core.getInput('alias');
 const githubToken = core.getInput('githubToken');
 const octokit = new github.GitHub(githubToken);
@@ -7187,6 +7188,7 @@ const updateDeploymentStatus = async (deploymentId, state, environment, logUrl, 
     }
     catch (e) {
         signale_1.default.fatal('Error while updating repo state', e);
+        throw e;
     }
 };
 /**
@@ -7234,6 +7236,7 @@ const deploy = async () => {
     }
 };
 deploy().catch(error => {
+    signale_1.default.fatal(error);
     core.setFailed(error.message);
 });
 
