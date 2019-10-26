@@ -13,7 +13,7 @@ const octokit = new github.GitHub(githubToken)
 
 const context = github.context
 
-console.log(github, context)
+console.log(github, context, process.cwd())
 
 enum GithubDeploymentStatus {
   // The deployment is pending.

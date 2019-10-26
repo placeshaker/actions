@@ -5736,7 +5736,7 @@ const prod = core.getInput('prod');
 const githubToken = core.getInput('githubToken');
 const octokit = new github.GitHub(githubToken);
 const context = github.context;
-console.log(github, context);
+console.log(github, context, process.cwd());
 var GithubDeploymentStatus;
 (function (GithubDeploymentStatus) {
     // The deployment is pending.
