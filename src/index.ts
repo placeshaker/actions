@@ -8,7 +8,8 @@ const zeitToken = core.getInput('nowToken')
 const scope = core.getInput('scope')
 const app = core.getInput('app')
 const appName = core.getInput('appName')
-const prod = core.getInput('prod')
+const prod = Boolean(core.getInput('prod'))
+const aliases = core.getInput('alias');
 const githubToken = core.getInput('githubToken')
 
 const octokit = new github.GitHub(githubToken)
@@ -40,7 +41,7 @@ enum GithubDeploymentStatus {
 }
 
 const nowJsonOptions = {
-  alias: [`pr-${context.payload.number}`],
+  alias: prod ? aliases : [],
   meta: {
     name: `pr-${context.payload.number}`,
     githubCommitSha: context.sha,

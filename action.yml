@@ -18,6 +18,9 @@ inputs:
     description: "Is production deployment"
     required: false
     default: false
+  alias:
+    description: array of alias domains to be deployed on production
+    required: false
 
   githubToken:
     required: true
