@@ -49,6 +49,8 @@ enum GithubDeploymentStatus {
 const nowJsonOptions = {
   alias: prod ? [aliases] : [],
   scope,
+  teamId: scope,
+  name: appName,
   meta: {
     name: `pr-${context.payload.number || 'test'}`,
     githubCommitSha: context.sha || 'test',
@@ -89,9 +91,11 @@ const deploymentOptions: DeploymentOptions = {
 const createGithubDeployment = async (payload: Deployment): Promise<any> => {
   try {
     signale.debug('Creating github deployment with data', payload)
+
     const {data} = await octokit.repos.createDeployment({
       environment: payload.target,
-      ref: context.ref,
+      // @ts-ignore
+      ref: context.payload.pull_request.head.sha,
       repo: context.repo.repo,
       owner: context.repo.owner,
       payload: JSON.stringify(payload)
