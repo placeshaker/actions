@@ -167,7 +167,7 @@ const deploy = async (): Promise<void> => {
         }
 
         if (githubDeployment) {
-          await updateDeploymentStatus(githubDeployment.id, state, payload.target, payload.deploymentId, payload.url)
+          await updateDeploymentStatus(githubDeployment.id, state, payload.target, payload.url, payload.alias[0] ? `https://${payload.alias[0]}`: undefined)
         }
       }
     } catch (e) {
