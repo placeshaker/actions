@@ -7173,7 +7173,7 @@ const deploy = async () => {
                         break;
                 }
                 if (githubDeployment) {
-                    await updateDeploymentStatus(githubDeployment.id, state, payload.target, payload.url, payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : undefined);
+                    await updateDeploymentStatus(githubDeployment.id, state, payload.target, payload.url ? `https://${payload.url}` : undefined, payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : undefined);
                 }
             }
         }
