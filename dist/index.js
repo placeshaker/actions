@@ -7157,16 +7157,16 @@ const deploy = async () => {
                 githubDeployment = await createGithubDeployment(payload);
             }
             else {
-                let state = GithubDeploymentStatus.PENDING;
+                let state = GithubDeploymentStatus.PENDING.toLowerCase();
                 switch (payload.readyState) {
                     case 'DEPLOYING':
-                        state = GithubDeploymentStatus.IN_PROGRESS;
+                        state = GithubDeploymentStatus.IN_PROGRESS.toLowerCase();
                         break;
                     case 'ERROR':
-                        state = GithubDeploymentStatus.ERROR;
+                        state = GithubDeploymentStatus.ERROR.toLowerCase();
                         break;
                     case 'READY':
-                        state = GithubDeploymentStatus.SUCCESS;
+                        state = GithubDeploymentStatus.SUCCESS.toLowerCase();
                         core.setOutput('previewUrl', payload.url);
                         break;
                     default:

@@ -149,16 +149,16 @@ const deploy = async (): Promise<void> => {
       if (type === 'created') {
         githubDeployment = await createGithubDeployment(payload)
       } else {
-        let state: string = GithubDeploymentStatus.PENDING
+        let state: string = GithubDeploymentStatus.PENDING.toLowerCase()
         switch (payload.readyState) {
           case 'DEPLOYING':
-            state = GithubDeploymentStatus.IN_PROGRESS
+            state = GithubDeploymentStatus.IN_PROGRESS.toLowerCase()
             break
           case 'ERROR':
-            state = GithubDeploymentStatus.ERROR
+            state = GithubDeploymentStatus.ERROR.toLowerCase()
             break
           case 'READY':
-            state = GithubDeploymentStatus.SUCCESS
+            state = GithubDeploymentStatus.SUCCESS.toLowerCase()
             core.setOutput('previewUrl', payload.url)
             break
 
