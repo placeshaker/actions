@@ -92,7 +92,7 @@ const createGithubDeployment = async (payload: Deployment): Promise<any> => {
     signale.debug('Creating github deployment with data', payload)
     const {data} = await octokit.repos.createDeployment({
       environment: payload.target,
-      ref: context.sha,
+      ref: context.ref,
       repo: context.repo.repo,
       owner: context.repo.owner,
       payload: JSON.stringify(payload)
