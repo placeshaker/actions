@@ -21,8 +21,9 @@ const octokit = new github.GitHub(githubToken, {
   ],
 })
 
-signale.success('Prod?', core.getInput('prod'), githubToken)
 const context = github.context
+
+signale.success(context)
 
 enum GithubDeploymentStatus {
   // The deployment is pending.
@@ -89,12 +90,12 @@ const deploymentOptions: DeploymentOptions = {
 
 const createGithubDeployment = async (payload: Deployment): Promise<any> => {
   try {
-    signale.debug('Creating github deployment with data', payload)
+    signale.debug('Creating github deployment')
 
     const {data} = await octokit.repos.createDeployment({
       environment: payload.target,
       // @ts-ignore
-      ref: context.ref,
+      ref: context.head_ref || context.ref,
       repo: context.repo.repo,
       owner: context.repo.owner,
       payload: JSON.stringify(payload)

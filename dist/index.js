@@ -7046,8 +7046,8 @@ const octokit = new github.GitHub(githubToken, {
         'ant-man-preview'
     ],
 });
-signale_1.default.success('Prod?', core.getInput('prod'), githubToken);
 const context = github.context;
+signale_1.default.success(context);
 var GithubDeploymentStatus;
 (function (GithubDeploymentStatus) {
     // The deployment is pending.
@@ -7106,11 +7106,11 @@ const deploymentOptions = {
 };
 const createGithubDeployment = async (payload) => {
     try {
-        signale_1.default.debug('Creating github deployment with data', payload);
+        signale_1.default.debug('Creating github deployment');
         const { data } = await octokit.repos.createDeployment({
             environment: payload.target,
             // @ts-ignore
-            ref: context.ref,
+            ref: context.head_ref || context.ref,
             repo: context.repo.repo,
             owner: context.repo.owner,
             payload: JSON.stringify(payload)
