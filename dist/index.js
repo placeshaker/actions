@@ -7157,7 +7157,7 @@ const deploy = async () => {
                 githubDeployment = await createGithubDeployment(payload);
             }
             else {
-                let state = GithubDeploymentStatus.INACTIVE;
+                let state = GithubDeploymentStatus.PENDING;
                 switch (payload.readyState) {
                     case 'DEPLOYING':
                         state = GithubDeploymentStatus.IN_PROGRESS;

@@ -149,7 +149,7 @@ const deploy = async (): Promise<void> => {
       if (type === 'created') {
         githubDeployment = await createGithubDeployment(payload)
       } else {
-        let state: string = GithubDeploymentStatus.INACTIVE
+        let state: string = GithubDeploymentStatus.PENDING
         switch (payload.readyState) {
           case 'DEPLOYING':
             state = GithubDeploymentStatus.IN_PROGRESS
