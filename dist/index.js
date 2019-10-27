@@ -7045,7 +7045,6 @@ const octokit = new github.GitHub(githubToken, {
         'flash-preview',
         'ant-man-preview'
     ],
-    log: console
 });
 signale_1.default.success('Prod?', core.getInput('prod'), githubToken);
 const context = github.context;
@@ -7132,7 +7131,7 @@ const updateDeploymentStatus = async (deployment_id, state, environment, log_url
             environment_url,
             state,
         });
-        signale_1.default.success('Updated deployment status', data);
+        signale_1.default.success('Updated deployment status to', state);
         return data;
     }
     catch (e) {

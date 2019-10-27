@@ -19,7 +19,6 @@ const octokit = new github.GitHub(githubToken, {
       'flash-preview',
       'ant-man-preview'
   ],
-  log: console
 })
 
 signale.success('Prod?', core.getInput('prod'), githubToken)
@@ -122,7 +121,7 @@ const updateDeploymentStatus = async (
       environment_url,
       state,
     })
-    signale.success('Updated deployment status', data)
+    signale.success('Updated deployment status to', state)
     return data
   } catch (e) {
     signale.fatal('Error while updating repo state', e)
