@@ -2919,70 +2919,7 @@ module.exports = function isArrayish(obj) {
 /* 160 */,
 /* 161 */,
 /* 162 */,
-/* 163 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRepoInformation = async (octokit, variables) => {
-    const { data } = await octokit.graphql(`
-    query($owner: String!, $name: String!, $pr: Int!){
-      repository(owner: $owner, name: $name) {
-        id
-        pullRequest(number: $pr) {
-          id
-        }
-      }
-    }
-    `, variables);
-    return data;
-};
-/**
- * Create a github deployment
- * @param octokit
- * @param variables
- */
-exports.createGHDeployment = async (octokit, variables) => {
-    const { data } = await octokit.graphql(`
-      mutation ($input: CreateDeploymentInput){
-        createDeployment(input: $input) {
-          deployment {
-            id
-            latestStatus {
-              environmentUrl
-            }
-          }
-        }
-      }
-      `, variables);
-    return data;
-};
-/**
- *
- * @param octokit
- * @param variables
- */
-exports.updateGHDeploymentStatus = async (octokit, variables) => {
-    const { data } = await octokit.graphql(`
-    mutation ($input: CreateDeploymentStatusInput!) {
-      createDeploymentStatus(input: $input) {
-        deploymentStatus {
-          state
-          logUrl
-          environment
-          environmentUrl
-        }
-      }
-    }
-    `, {
-        input: variables,
-    });
-    return data;
-};
-
-
-/***/ }),
+/* 163 */,
 /* 164 */,
 /* 165 */,
 /* 166 */,
@@ -7095,8 +7032,6 @@ const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 const now_client_1 = __webpack_require__(380);
 const signale_1 = __importDefault(__webpack_require__(759));
-const utils_1 = __webpack_require__(163);
-signale_1.default.success(process.env);
 const zeitToken = core.getInput('nowToken');
 const scope = core.getInput('scope');
 const app = core.getInput('app');
@@ -7104,7 +7039,14 @@ const appName = core.getInput('appName');
 const prod = !['', '0', 'false'].includes(core.getInput('prod'));
 const aliases = core.getInput('alias');
 const githubToken = core.getInput('github_token');
-const octokit = new github.GitHub(githubToken);
+const octokit = new github.GitHub(githubToken, {
+    previews: [
+        'mercy-preview',
+        'flash-preview',
+        'ant-man-preview'
+    ],
+    log: console
+});
 signale_1.default.success('Prod?', core.getInput('prod'), githubToken);
 const context = github.context;
 var GithubDeploymentStatus;
@@ -7163,27 +7105,15 @@ const deploymentOptions = {
     debug: true,
 };
 const createGithubDeployment = async (payload) => {
-    const variables = {
-        owner: context.repo.owner,
-        name: context.repo.repo,
-        pr: context.payload.number,
-    };
-    signale_1.default.debug('Consulting repo information with variables', variables);
-    const repoData = await utils_1.getRepoInformation(octokit, variables);
-    signale_1.default.success('Got repo data', repoData);
-    const input = {
-        repositoryId: repoData.id,
-        refId: repoData.pullRequest.id,
-        autoMerge: false,
-        requiredContexts: [],
-        description: context.payload.head_commit.message,
-        environment: payload.target,
-        task: 'deploy',
-        payload: JSON.stringify(payload),
-    };
     try {
-        signale_1.default.debug('Creating github deployment with data', input, nowJsonOptions);
-        const data = await utils_1.createGHDeployment(octokit, input);
+        signale_1.default.debug('Creating github deployment with data', payload);
+        const { data } = await octokit.repos.createDeployment({
+            environment: payload.target,
+            ref: context.sha,
+            repo: context.repo.repo,
+            owner: context.repo.owner,
+            payload: JSON.stringify(payload)
+        });
         signale_1.default.success('Created deployment', data);
         return data;
     }
@@ -7191,17 +7121,19 @@ const createGithubDeployment = async (payload) => {
         signale_1.default.fatal('Error creating deployment', e);
     }
 };
-const updateDeploymentStatus = async (deploymentId, state, environment, logUrl, environmentUrl) => {
-    const input = {
-        deploymentId,
-        state,
-        environment,
-        logUrl,
-        environmentUrl,
-    };
-    signale_1.default.debug('Updating github deployment state', deploymentId, state, environment, logUrl, environmentUrl);
+const updateDeploymentStatus = async (deployment_id, state, environment, log_url, environment_url) => {
     try {
-        return await utils_1.updateGHDeploymentStatus(octokit, input);
+        const { data } = await octokit.repos.createDeploymentStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            deployment_id,
+            log_url,
+            environment,
+            environment_url,
+            state,
+        });
+        signale_1.default.success('Updated deployment status', data);
+        return data;
     }
     catch (e) {
         signale_1.default.fatal('Error while updating repo state', e);
@@ -11810,6 +11742,7 @@ rest_1.default.prototype = new rest_1.default();
 exports.context = new Context.Context();
 class GitHub extends rest_1.default {
     constructor(token, opts = {}) {
+        console.log(Object.assign(Object.assign({}, opts), { auth: `token ${token}` }))
         super(Object.assign(Object.assign({}, opts), { auth: `token ${token}` }));
         this.graphql = graphql_1.defaults({
             headers: { authorization: `token ${token}` }
@@ -11818,6 +11751,7 @@ class GitHub extends rest_1.default {
 }
 exports.GitHub = GitHub;
 //# sourceMappingURL=github.js.map
+
 
 /***/ }),
 /* 470 */

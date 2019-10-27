@@ -42,7 +42,7 @@ export type UpdateDeploymentInput = {
 }
 
 export const getRepoInformation = async (octokit: GitHub, variables: RepoInformationVariables): Promise<any> => {
-  const {data} = await octokit.graphql(
+  const {data, errors} = await octokit.graphql(
     `
     query($owner: String!, $name: String!, $pr: Int!){
       repository(owner: $owner, name: $name) {
@@ -56,6 +56,11 @@ export const getRepoInformation = async (octokit: GitHub, variables: RepoInforma
     variables,
   )
 
+  console.log(errors)
+
+  if(errors)
+    throw errors
+
   return data
 }
 
@@ -65,9 +70,9 @@ export const getRepoInformation = async (octokit: GitHub, variables: RepoInforma
  * @param variables
  */
 export const createGHDeployment = async (octokit: GitHub, variables: CreateDeploymentInput): Promise<any> => {
-  const {data} = await octokit.graphql(
-    `
-      mutation ($input: CreateDeploymentInput){
+
+  const {data, errors} = await octokit.graphql(
+    `mutation ($input: CreateDeploymentInput){
         createDeployment(input: $input) {
           deployment {
             id
@@ -76,10 +81,12 @@ export const createGHDeployment = async (octokit: GitHub, variables: CreateDeplo
             }
           }
         }
-      }
-      `,
-    variables,
+      }`,
+      variables,
   )
+
+  if(errors)
+    throw errors
 
   return data
 }
@@ -90,7 +97,7 @@ export const createGHDeployment = async (octokit: GitHub, variables: CreateDeplo
  * @param variables
  */
 export const updateGHDeploymentStatus = async (octokit: GitHub, variables: UpdateDeploymentInput): Promise<any> => {
-  const {data} = await octokit.graphql(
+  const {data, errors} = await octokit.graphql(
     `
     mutation ($input: CreateDeploymentStatusInput!) {
       createDeploymentStatus(input: $input) {
@@ -107,6 +114,9 @@ export const updateGHDeploymentStatus = async (octokit: GitHub, variables: Updat
       input: variables,
     },
   )
+
+  if(errors)
+    throw errors
 
   return data
 }

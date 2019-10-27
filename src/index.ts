@@ -3,9 +3,6 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {createDeployment, Deployment, DeploymentOptions} from 'now-client'
 import signale from 'signale'
-import {CreateDeploymentInput, createGHDeployment, getRepoInformation, updateGHDeploymentStatus} from './utils'
-
-signale.success(process.env)
 
 const zeitToken = core.getInput('nowToken')
 const scope = core.getInput('scope')
@@ -15,7 +12,15 @@ const prod = !['', '0', 'false'].includes(core.getInput('prod'))
 const aliases = core.getInput('alias')
 const githubToken = core.getInput('github_token')
 
-const octokit = new github.GitHub(githubToken)
+
+const octokit = new github.GitHub(githubToken, {
+  previews: [
+      'mercy-preview',
+      'flash-preview',
+      'ant-man-preview'
+  ],
+  log: console
+})
 
 signale.success('Prod?', core.getInput('prod'), githubToken)
 const context = github.context
@@ -82,56 +87,43 @@ const deploymentOptions: DeploymentOptions = {
   debug: true,
 }
 
-const createGithubDeployment = async (payload: Deployment): Promise<void> => {
-  const variables = {
-    owner: context.repo.owner,
-    name: context.repo.repo,
-    pr: context.payload.number,
-  }
-
-  signale.debug('Consulting repo information with variables', variables)
-  const repoData = await getRepoInformation(octokit, variables)
-
-  signale.success('Got repo data', repoData)
-
-  const input: CreateDeploymentInput = {
-    repositoryId: repoData.id,
-    refId: repoData.pullRequest.id,
-    autoMerge: false,
-    requiredContexts: [],
-    description: context.payload.head_commit.message,
-    environment: payload.target,
-    task: 'deploy',
-    payload: JSON.stringify(payload),
-  }
+const createGithubDeployment = async (payload: Deployment): Promise<any> => {
   try {
-    signale.debug('Creating github deployment with data', input, nowJsonOptions)
-    const data = await createGHDeployment(octokit, input)
+    signale.debug('Creating github deployment with data', payload)
+    const {data} = await octokit.repos.createDeployment({
+      environment: payload.target,
+      ref: context.sha,
+      repo: context.repo.repo,
+      owner: context.repo.owner,
+      payload: JSON.stringify(payload)
+    })
     signale.success('Created deployment', data)
-    return data
+    return data;
   } catch (e) {
     signale.fatal('Error creating deployment', e)
   }
 }
 
 const updateDeploymentStatus = async (
-  deploymentId: string,
-  state: string,
-  environment: string,
-  logUrl?: string,
-  environmentUrl?: string,
-): Promise<void> => {
-  const input = {
-    deploymentId,
-    state,
-    environment,
-    logUrl,
-    environmentUrl,
-  }
+  deployment_id: number,
+  state: any,
+  environment: any,
+  log_url?: string,
+  environment_url?: string,
+): Promise<any> => {
 
-  signale.debug('Updating github deployment state', deploymentId, state, environment, logUrl, environmentUrl)
   try {
-    return await updateGHDeploymentStatus(octokit, input)
+    const {data} = await octokit.repos.createDeploymentStatus({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      deployment_id,
+      log_url,
+      environment,
+      environment_url,
+      state,
+    })
+    signale.success('Updated deployment status', data)
+    return data
   } catch (e) {
     signale.fatal('Error while updating repo state', e)
     throw e
