@@ -32,6 +32,9 @@ inputs:
 outputs:
   previewUrl:
     description: "deployment preview URL"
+  deploymentId:
+    description: "Deployment Id"
+
 
 runs:
   using: node12

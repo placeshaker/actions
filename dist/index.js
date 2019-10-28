@@ -7033,62 +7033,62 @@ const github = __importStar(__webpack_require__(469));
 const now_client_1 = __webpack_require__(380);
 const signale_1 = __importDefault(__webpack_require__(759));
 const zeitToken = core.getInput('nowToken');
-const scope = core.getInput('scope');
+// const scope = core.getInput('scope')
 const app = core.getInput('app');
 const appName = core.getInput('appName');
 const prod = !['', '0', 'false'].includes(core.getInput('prod'));
-const aliases = core.getInput('alias');
-const githubToken = core.getInput('github_token');
-const octokit = new github.GitHub(githubToken, {
-    previews: [
-        'mercy-preview',
-        'flash-preview',
-        'ant-man-preview'
-    ],
-});
+// const aliases = core.getInput('alias')
+// const githubToken = core.getInput('github_token')
+/*const octokit = new github.GitHub(githubToken, {
+  previews: ['mercy-preview', 'flash-preview', 'ant-man-preview'],
+})*/
 const context = github.context;
 signale_1.default.success(context);
-var GithubDeploymentStatus;
-(function (GithubDeploymentStatus) {
-    // The deployment is pending.
-    GithubDeploymentStatus["PENDING"] = "PENDING";
-    // The deployment was successful.
-    GithubDeploymentStatus["SUCCESS"] = "SUCCESS";
-    // The deployment has failed.
-    GithubDeploymentStatus["FAILURE"] = "FAILURE";
-    // The deployment is inactive.
-    GithubDeploymentStatus["INACTIVE"] = "INACTIVE";
-    // The deployment experienced an error.
-    GithubDeploymentStatus["ERROR"] = "ERROR";
-    // The deployment is queued
-    GithubDeploymentStatus["QUEUED"] = "QUEUED";
-    // The deployment is in progress.
-    GithubDeploymentStatus["IN_PROGRESS"] = "IN_PROGRESS";
-})(GithubDeploymentStatus || (GithubDeploymentStatus = {}));
-const nowJsonOptions = {
-    alias: prod ? [aliases] : [],
-    scope,
-    name: appName,
-    meta: {
-        name: `pr-${context.payload.number || 'test'}`,
-        githubCommitSha: context.sha || 'test',
-        githubCommitAuthorName: context.actor || 'test',
-        githubCommitAuthorLogin: context.actor || 'test',
-        githubDeployment: '1',
-        githubOrg: context.repo.owner || 'test',
-        githubRepo: context.repo.repo || 'test',
-        githubCommitOrg: context.repo.owner || 'test',
-        githubCommitRepo: context.repo.repo || 'test',
-        pr: `${context.payload.number || 1}`,
-    },
-    github: {
-        enabled: true,
-        autoAlias: true,
-        silent: false,
-        autoJobCancelation: true,
-    },
-    public: false,
-};
+/*enum GithubDeploymentStatus {
+  // The deployment is pending.
+  PENDING = 'PENDING',
+
+  // The deployment was successful.
+  SUCCESS = 'SUCCESS',
+
+  // The deployment has failed.
+  FAILURE = 'FAILURE',
+
+  // The deployment is inactive.
+  INACTIVE = 'INACTIVE',
+
+  // The deployment experienced an error.
+  ERROR = 'ERROR',
+  // The deployment is queued
+  QUEUED = 'QUEUED',
+
+  // The deployment is in progress.
+  IN_PROGRESS = 'IN_PROGRESS',
+}*/
+/*const nowJsonOptions = {
+  alias: prod ? [aliases] : [],
+  scope,
+  name: appName,
+  meta: {
+    name: `pr-${context.payload.number || 'test'}`,
+    githubCommitSha: context.sha || 'test',
+    githubCommitAuthorName: context.actor || 'test',
+    githubCommitAuthorLogin: context.actor || 'test',
+    githubDeployment: '1',
+    githubOrg: context.repo.owner || 'test',
+    githubRepo: context.repo.repo || 'test',
+    githubCommitOrg: context.repo.owner || 'test',
+    githubCommitRepo: context.repo.repo || 'test',
+    pr: `${context.payload.number || 1}`,
+  },
+  github: {
+    enabled: true,
+    autoAlias: true,
+    silent: false,
+    autoJobCancelation: true,
+  },
+  public: false,
+}*/
 const deploymentOptions = {
     version: 2,
     name: appName,
@@ -7104,86 +7104,109 @@ const deploymentOptions = {
     force: true,
     debug: true,
 };
-const createGithubDeployment = async (payload) => {
-    try {
-        signale_1.default.debug('Creating github deployment');
-        const { data } = await octokit.repos.createDeployment({
-            environment: payload.target,
-            // @ts-ignore
-            ref: context.head_ref || context.ref,
-            repo: context.repo.repo,
-            owner: context.repo.owner,
-            payload: JSON.stringify(payload)
-        });
-        signale_1.default.success('Created deployment', data);
-        return data;
-    }
-    catch (e) {
-        signale_1.default.fatal('Error creating deployment', e);
-    }
-};
-const updateDeploymentStatus = async (deployment_id, state, environment, log_url, environment_url) => {
-    try {
-        const { data } = await octokit.repos.createDeploymentStatus({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            deployment_id,
-            log_url,
-            environment,
-            environment_url,
-            state,
-        });
-        signale_1.default.success('Updated deployment status to', state);
-        return data;
-    }
-    catch (e) {
-        signale_1.default.fatal('Error while updating repo state', e);
-        throw e;
-    }
-};
+/*const createGithubDeployment = async (payload: Deployment): Promise<any> => {
+  try {
+    signale.debug('Creating github deployment')
+
+    const {data} = await octokit.repos.createDeployment({
+      environment: payload.target,
+      // @ts-ignore
+      ref: context.head_ref || context.ref,
+      repo: context.repo.repo,
+      owner: context.repo.owner,
+      payload: JSON.stringify(payload),
+    })
+    signale.success('Created deployment', data)
+    return data
+  } catch (e) {
+    signale.fatal('Error creating deployment', e)
+  }
+}*/
+/*const updateDeploymentStatus = async (
+  deployment_id: number,
+  state: any,
+  environment: any,
+  log_url?: string,
+  environment_url?: string,
+): Promise<any> => {
+  try {
+    const {data} = await octokit.repos.createDeploymentStatus({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      deployment_id,
+      log_url,
+      environment,
+      environment_url,
+      state,
+    })
+    signale.success('Updated deployment status to', state)
+    return data
+  } catch (e) {
+    signale.fatal('Error while updating repo state', e)
+    throw e
+  }
+}*/
 /**
  * Start deploying
  */
 const deploy = async () => {
-    signale_1.default.debug('Starting now deployment with data', deploymentOptions, nowJsonOptions);
-    let githubDeployment;
+    signale_1.default.debug('Starting now deployment with data', deploymentOptions);
+    // let githubDeployment: any
     const appPath = path.resolve(process.cwd(), app);
-    for await (const event of now_client_1.createDeployment(appPath, deploymentOptions, nowJsonOptions)) {
+    for await (const event of now_client_1.createDeployment(appPath, deploymentOptions)) {
         const { payload, type } = event;
         try {
             if (event.type !== 'hashes-calculated') {
-                signale_1.default.debug('Received event ' + event.type, event);
+                signale_1.default.debug('Received event ' + event.type);
+                signale_1.default.debug(event.payload);
             }
-            if (type === 'created') {
-                githubDeployment = await createGithubDeployment(payload);
-            }
-            else {
-                let state = GithubDeploymentStatus.PENDING.toLowerCase();
-                switch (payload.readyState) {
-                    case 'DEPLOYING':
-                        state = GithubDeploymentStatus.IN_PROGRESS.toLowerCase();
-                        break;
-                    case 'ERROR':
-                        state = GithubDeploymentStatus.ERROR.toLowerCase();
-                        break;
-                    case 'READY':
-                        state = GithubDeploymentStatus.SUCCESS.toLowerCase();
-                        core.setOutput('previewUrl', payload.url);
-                        break;
-                    default:
-                        break;
-                }
-                if (githubDeployment) {
-                    await updateDeploymentStatus(githubDeployment.id, state, payload.target, payload.url ? `https://${payload.url}` : undefined, payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : undefined);
-                }
-            }
+            if (type === 'ready') {
+                //const state = GithubDeploymentStatus.SUCCESS.toLowerCase()
+                core.setOutput('previewUrl', payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : '');
+                core.setOutput('deploymentId', payload.url ? `https://${payload.url}` : payload.url);
+                /*await updateDeploymentStatus(
+                  githubDeployment.id,
+                  state,
+                  payload.target,
+                  payload.url ? `https://${payload.url}` : undefined,
+                  payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : undefined,
+                )*/
+            } /*else {
+              let state: string = GithubDeploymentStatus.PENDING.toLowerCase()
+              switch (payload.readyState) {
+                case 'DEPLOYING':
+                  state = GithubDeploymentStatus.IN_PROGRESS.toLowerCase()
+                  break
+                case 'ERROR':
+                  state = GithubDeploymentStatus.ERROR.toLowerCase()
+                  break
+                case 'READY':
+                  state = GithubDeploymentStatus.SUCCESS.toLowerCase()
+                  core.setOutput('previewUrl', payload.url)
+                  core.setOutput('deploymentId', payload.url)
+                  break
+      
+                default:
+                  break
+              }
+      
+              if (githubDeployment) {
+                await updateDeploymentStatus(
+                  githubDeployment.id,
+                  state,
+                  payload.target,
+                  payload.url ? `https://${payload.url}` : undefined,
+                  payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : undefined,
+                )
+              }
+            }*/
         }
         catch (e) {
             signale_1.default.fatal('Received error', e);
-            await updateDeploymentStatus(githubDeployment.id, GithubDeploymentStatus.FAILURE, payload.target, payload.deploymentId, payload.url);
             throw e;
         }
     }
+    signale_1.default.debug('Getting logs from deployment');
 };
 deploy().catch(error => {
     signale_1.default.fatal(error);
@@ -11743,7 +11766,6 @@ rest_1.default.prototype = new rest_1.default();
 exports.context = new Context.Context();
 class GitHub extends rest_1.default {
     constructor(token, opts = {}) {
-        console.log(Object.assign(Object.assign({}, opts), { auth: `token ${token}` }))
         super(Object.assign(Object.assign({}, opts), { auth: `token ${token}` }));
         this.graphql = graphql_1.defaults({
             headers: { authorization: `token ${token}` }
@@ -11752,7 +11774,6 @@ class GitHub extends rest_1.default {
 }
 exports.GitHub = GitHub;
 //# sourceMappingURL=github.js.map
-
 
 /***/ }),
 /* 470 */

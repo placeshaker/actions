@@ -20,14 +20,14 @@
     "build": "ncc build src/index.ts -o dist",
     "test": "tsc --noEmit && jest",
     "lint": "eslint . --ext .ts --fix",
-    "postinstall": "npm run build"
+    "postinstall": "npm run build",
+    "logs": "now logs"
   },
   "bugs": {
     "url": "https://github.com/placeshaker/actions/issues"
   },
   "dependencies": {
     "@actions/core": "^1.2.0",
-    "@actions/exec": "^1.0.1",
     "@actions/github": "^1.1.0",
     "@zeit/ncc": "^0.20.5",
     "cli-color": "^2.0.0",
@@ -39,6 +39,7 @@
     "signale": "^1.4.0"
   },
   "devDependencies": {
+    "@actions/exec": "^1.0.1",
     "@types/jest": "^24.0.19",
     "@types/js-yaml": "^3.12.1",
     "@types/node": "^12.11.7",
