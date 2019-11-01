@@ -7053,16 +7053,18 @@ const overrideNowJson = {
 };
 const defaultJsonOptions = {
     meta: {
-        name: `pr-${context.payload.number || 'test'}`,
-        githubCommitSha: context.sha || 'test',
-        githubCommitAuthorName: context.actor || 'test',
-        githubCommitAuthorLogin: context.actor || 'test',
+        name: `pr-${context.payload.number}`,
+        githubCommitSha: context.sha,
+        githubCommitAuthorName: context.actor,
+        githubCommitAuthorLogin: context.actor,
         githubDeployment: '1',
-        githubOrg: context.repo.owner || 'test',
-        githubRepo: context.repo.repo || 'test',
-        githubCommitOrg: context.repo.owner || 'test',
-        githubCommitRepo: context.repo.repo || 'test',
-        pr: `${context.payload.number || 1}`,
+        githubOrg: context.repo.owner,
+        githubRepo: context.repo.repo,
+        githubCommitOrg: context.repo.owner,
+        githubCommitRepo: context.repo.repo,
+        pr: `${context.payload.number}`,
+        // @ts-ignore
+        ref: context.head_ref
     },
     github: {
         enabled: true,
@@ -7133,13 +7135,17 @@ const updateDeploymentStatus = async (deployment_id, state, environment, log_url
 const deploy = async () => {
     signale_1.default.debug('Starting now deployment with data', deploymentOptions);
     const appPath = path.resolve(process.cwd(), app);
-    const jsonConfigFile = path.resolve(appPath, 'now.json');
+    const jsonConfigFile = path.join(appPath, 'now.json');
+    signale_1.default.debug('Trying to read now.json', jsonConfigFile);
     let finalConfig = Object.assign(defaultJsonOptions, overrideNowJson);
     if (fs.existsSync(jsonConfigFile)) {
+        signale_1.default.debug('now.json exists, trying to read...');
         try {
             const jsonContent = fs.readFileSync(jsonConfigFile, { encoding: 'utf8' });
             if (jsonContent) {
+                signale_1.default.debug('trying to parse ....', JSON.stringify(jsonContent));
                 let conf = JSON.parse(jsonContent);
+                signale_1.default.debug(JSON.stringify(conf, null, 2));
                 finalConfig = Object.assign(defaultJsonOptions, conf, overrideNowJson);
             }
         }
