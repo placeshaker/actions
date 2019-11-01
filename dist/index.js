@@ -7032,63 +7032,46 @@ const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 const now_client_1 = __webpack_require__(380);
 const signale_1 = __importDefault(__webpack_require__(759));
+const fs = __importStar(__webpack_require__(747));
 const zeitToken = core.getInput('now_token');
-// const scope = core.getInput('scope')
+const scope = core.getInput('scope');
 const app = core.getInput('app');
 const appName = core.getInput('app_name');
 const prod = !['', '0', 'false'].includes(core.getInput('prod'));
-// const aliases = core.getInput('alias')
+const alias = core.getInput('alias');
 const githubToken = core.getInput('github_token');
+const debug = ['1', '0', 'true', 'false', true, false].includes(core.getInput('debug')) ? Boolean(core.getInput('debug')) : false;
 const octokit = new github.GitHub(githubToken, {
     previews: ['mercy-preview', 'flash-preview', 'ant-man-preview'],
 });
 const context = github.context;
 signale_1.default.success(context);
-/*enum GithubDeploymentStatus {
-  // The deployment is pending.
-  PENDING = 'PENDING',
-
-  // The deployment was successful.
-  SUCCESS = 'SUCCESS',
-
-  // The deployment has failed.
-  FAILURE = 'FAILURE',
-
-  // The deployment is inactive.
-  INACTIVE = 'INACTIVE',
-
-  // The deployment experienced an error.
-  ERROR = 'ERROR',
-  // The deployment is queued
-  QUEUED = 'QUEUED',
-
-  // The deployment is in progress.
-  IN_PROGRESS = 'IN_PROGRESS',
-}*/
-/*const nowJsonOptions = {
-  alias: prod ? [aliases] : [],
-  scope,
-  name: appName,
-  meta: {
-    name: `pr-${context.payload.number || 'test'}`,
-    githubCommitSha: context.sha || 'test',
-    githubCommitAuthorName: context.actor || 'test',
-    githubCommitAuthorLogin: context.actor || 'test',
-    githubDeployment: '1',
-    githubOrg: context.repo.owner || 'test',
-    githubRepo: context.repo.repo || 'test',
-    githubCommitOrg: context.repo.owner || 'test',
-    githubCommitRepo: context.repo.repo || 'test',
-    pr: `${context.payload.number || 1}`,
-  },
-  github: {
-    enabled: true,
-    autoAlias: true,
-    silent: false,
-    autoJobCancelation: true,
-  },
-  public: false,
-}*/
+const overrideNowJson = {
+    name: appName,
+    scope,
+    alias: alias.split(',')
+};
+const defaultJsonOptions = {
+    meta: {
+        name: `pr-${context.payload.number || 'test'}`,
+        githubCommitSha: context.sha || 'test',
+        githubCommitAuthorName: context.actor || 'test',
+        githubCommitAuthorLogin: context.actor || 'test',
+        githubDeployment: '1',
+        githubOrg: context.repo.owner || 'test',
+        githubRepo: context.repo.repo || 'test',
+        githubCommitOrg: context.repo.owner || 'test',
+        githubCommitRepo: context.repo.repo || 'test',
+        pr: `${context.payload.number || 1}`,
+    },
+    github: {
+        enabled: true,
+        autoAlias: true,
+        silent: false,
+        autoJobCancelation: true,
+    },
+    public: false,
+};
 const deploymentOptions = {
     version: 2,
     name: appName,
@@ -7102,7 +7085,7 @@ const deploymentOptions = {
     target: prod ? 'production' : 'staging',
     token: zeitToken,
     force: true,
-    debug: true,
+    debug,
 };
 const createGithubDeployment = async (payload) => {
     try {
@@ -7150,8 +7133,29 @@ const updateDeploymentStatus = async (deployment_id, state, environment, log_url
 const deploy = async () => {
     signale_1.default.debug('Starting now deployment with data', deploymentOptions);
     const appPath = path.resolve(process.cwd(), app);
+    const jsonConfigFile = path.resolve(appPath, 'now.json');
+    let finalConfig = {
+        ...defaultJsonOptions,
+        ...overrideNowJson,
+    };
+    if (fs.existsSync(jsonConfigFile)) {
+        try {
+            const jsonContent = fs.readFileSync(jsonConfigFile, { encoding: 'utf8' });
+            if (jsonContent) {
+                let conf = JSON.parse(jsonContent);
+                finalConfig = Object.assign({
+                    ...defaultJsonOptions,
+                    ...conf,
+                    ...overrideNowJson
+                });
+            }
+        }
+        catch (e) {
+            signale_1.default.fatal("Unable to read now.json, keep going anyway...");
+        }
+    }
     let deployment;
-    for await (const event of now_client_1.createDeployment(appPath, deploymentOptions)) {
+    for await (const event of now_client_1.createDeployment(appPath, deploymentOptions, finalConfig)) {
         const { payload, type } = event;
         try {
             if (event.type !== 'hashes-calculated') {

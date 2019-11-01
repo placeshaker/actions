@@ -1,16 +1,18 @@
 import * as path from 'path'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {createDeployment, Deployment, DeploymentOptions} from 'now-client'
+import {createDeployment, Deployment, DeploymentOptions, NowJsonOptions} from 'now-client'
 import signale from 'signale'
+import * as fs from 'fs'
 
 const zeitToken = core.getInput('now_token')
-// const scope = core.getInput('scope')
+const scope = core.getInput('scope')
 const app = core.getInput('app')
 const appName = core.getInput('app_name')
 const prod = !['', '0', 'false'].includes(core.getInput('prod'))
-// const aliases = core.getInput('alias')
+const alias = core.getInput('alias')
 const githubToken = core.getInput('github_token')
+const debug = ['1', '0', 'true','false', true, false].includes(core.getInput('debug')) ? Boolean(core.getInput('debug')) : false
 
 const octokit = new github.GitHub(githubToken, {
   previews: ['mercy-preview', 'flash-preview', 'ant-man-preview'],
@@ -20,32 +22,13 @@ const context = github.context
 
 signale.success(context)
 
-/*enum GithubDeploymentStatus {
-  // The deployment is pending.
-  PENDING = 'PENDING',
-
-  // The deployment was successful.
-  SUCCESS = 'SUCCESS',
-
-  // The deployment has failed.
-  FAILURE = 'FAILURE',
-
-  // The deployment is inactive.
-  INACTIVE = 'INACTIVE',
-
-  // The deployment experienced an error.
-  ERROR = 'ERROR',
-  // The deployment is queued
-  QUEUED = 'QUEUED',
-
-  // The deployment is in progress.
-  IN_PROGRESS = 'IN_PROGRESS',
-}*/
-
-/*const nowJsonOptions = {
-  alias: prod ? [aliases] : [],
-  scope,
+const overrideNowJson = {
   name: appName,
+  scope,
+  alias: alias.split(',')
+}
+
+const defaultJsonOptions = {
   meta: {
     name: `pr-${context.payload.number || 'test'}`,
     githubCommitSha: context.sha || 'test',
@@ -65,7 +48,7 @@ signale.success(context)
     autoJobCancelation: true,
   },
   public: false,
-}*/
+}
 
 const deploymentOptions: DeploymentOptions = {
   version: 2,
@@ -80,7 +63,7 @@ const deploymentOptions: DeploymentOptions = {
   target: prod ? 'production' : 'staging',
   token: zeitToken,
   force: true,
-  debug: true,
+  debug,
 }
 
 const createGithubDeployment = async (payload: Deployment): Promise<any> => {
@@ -137,9 +120,33 @@ const deploy = async (): Promise<void> => {
   signale.debug('Starting now deployment with data', deploymentOptions)
 
   const appPath = path.resolve(process.cwd(), app)
+  const jsonConfigFile = path.resolve(appPath, 'now.json')
+
+  let finalConfig: NowJsonOptions = {
+    ...defaultJsonOptions,
+    ...overrideNowJson,
+  };
+
+  if(fs.existsSync(jsonConfigFile)) {
+    try {
+      const jsonContent = fs.readFileSync(jsonConfigFile, { encoding: 'utf8'})
+      if(jsonContent) {
+        let conf = JSON.parse(jsonContent)
+        finalConfig = Object.assign({
+          ...defaultJsonOptions,
+          ...conf,
+          ...overrideNowJson
+        })
+      }
+    }catch(e) {
+      signale.fatal("Unable to read now.json, keep going anyway...")
+    }
+
+  }
+
   let deployment: any;
 
-  for await (const event of createDeployment(appPath, deploymentOptions)) {
+  for await (const event of createDeployment(appPath, deploymentOptions, finalConfig)) {
     const {payload, type} = event
     try {
       if (event.type !== 'hashes-calculated') {
