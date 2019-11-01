@@ -8,15 +8,26 @@ inputs:
   now_token:
     description: "zeit.co token"
     required: true
+
   app:
     description: "The package app to deploy"
     required: true
+
   app_name:
     description: "The application name in now.sh"
     required: true
 
   prod:
     description: "Is production deployment"
+    required: false
+    default: false
+
+  alias:
+    description: "The alias for this deployment"
+    required: false
+
+  debug:
+    description: Debug the output to check the errors
     required: false
     default: false
 
