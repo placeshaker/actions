@@ -5,35 +5,30 @@ inputs:
   github_token:
     required: true
     description: The github token to send deployments to the api
-  nowToken:
+  now_token:
     description: "zeit.co token"
     required: true
   app:
     description: "The package app to deploy"
     required: true
-  appName:
+  app_name:
     description: "The application name in now.sh"
     required: true
-  scope:
-    description: "This is required if your deployment is made on team project."
-    required: false
+
   prod:
     description: "Is production deployment"
     required: false
     default: false
-  alias:
-    description: array of alias domains to be deployed on production
-    required: false
-    default: null
-
-  githubToken:
-    required: true
 
 outputs:
-  previewUrl:
+  environment-url:
     description: "deployment preview URL"
-  deploymentId:
-    description: "Deployment Id"
+
+  log-url:
+    description: "Logs url"
+
+  deployment-id:
+    description: "Deployment ID"
 
 
 runs:
