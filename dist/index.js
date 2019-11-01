@@ -7096,7 +7096,7 @@ const createGithubDeployment = async (payload) => {
             environment: payload.target,
             task: 'deploy',
             // @ts-ignore
-            ref: context.head_ref || context.ref,
+            ref: context.payload.pull_request.head.ref || context.ref,
             repo: context.repo.repo,
             owner: context.repo.owner,
             payload: JSON.stringify(payload),
