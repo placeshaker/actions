@@ -186,6 +186,8 @@ const deploy = async (): Promise<void> => {
           core.setOutput('environment-url', payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : '')
           core.setOutput('log-url', payload.url ? `https://${payload.url}` : payload.url)
           core.setOutput('deployment-id', deployment.id)
+
+
         }
       }
     } catch (e) {
