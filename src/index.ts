@@ -22,8 +22,6 @@ const octokit = new github.GitHub(githubToken, {
 
 const context = github.context
 
-if (debug) signale.success(JSON.stringify(context.payload, null, 2))
-
 const overrideNowJson = {
   name: appName,
   scope,
@@ -146,12 +144,12 @@ const deploy = async (): Promise<void> => {
     force: true,
     debug,
   }
-  signale.debug('Starting now deployment with data', deploymentOptions)
+  signale.debug('Starting now deployment with data')
 
   const appPath = path.resolve(process.cwd(), app)
   const jsonConfigFile = path.join(appPath, 'now.json')
 
-  signale.debug('Trying to read now.json', jsonConfigFile)
+  signale.debug('Trying to read now.json')
 
   let finalConfig: NowJsonOptions = Object.assign(defaultJsonOptions, overrideNowJson)
 
@@ -177,8 +175,6 @@ const deploy = async (): Promise<void> => {
       finalConfig = Object.assign(defaultJsonOptions, jsonContent, overrideNowJson)
     }
   }
-
-  console.log('FINAL CONF', JSON.stringify(finalConfig, null, 2))
 
   let deployment: any
 

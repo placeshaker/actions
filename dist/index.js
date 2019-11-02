@@ -7047,8 +7047,6 @@ const octokit = new github.GitHub(githubToken, {
     previews: ['mercy-preview', 'flash-preview', 'ant-man-preview'],
 });
 const context = github.context;
-if (debug)
-    signale_1.default.success(JSON.stringify(context.payload, null, 2));
 const overrideNowJson = {
     name: appName,
     scope,
@@ -7153,10 +7151,10 @@ const deploy = async () => {
         force: true,
         debug,
     };
-    signale_1.default.debug('Starting now deployment with data', deploymentOptions);
+    signale_1.default.debug('Starting now deployment with data');
     const appPath = path.resolve(process.cwd(), app);
     const jsonConfigFile = path.join(appPath, 'now.json');
-    signale_1.default.debug('Trying to read now.json', jsonConfigFile);
+    signale_1.default.debug('Trying to read now.json');
     let finalConfig = Object.assign(defaultJsonOptions, overrideNowJson);
     if (fs.existsSync(jsonConfigFile)) {
         signale_1.default.debug('now.json exists, trying to read...');
@@ -7177,7 +7175,6 @@ const deploy = async () => {
             finalConfig = Object.assign(defaultJsonOptions, jsonContent, overrideNowJson);
         }
     }
-    console.log('FINAL CONF', JSON.stringify(finalConfig, null, 2));
     let deployment;
     for await (const event of now_client_1.createDeployment(appPath, deploymentOptions, finalConfig)) {
         const { payload, type } = event;
