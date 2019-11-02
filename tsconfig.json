@@ -2,6 +2,8 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "esnext",
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
     "lib": [
       "es2015",
       "es2017"

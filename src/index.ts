@@ -1,9 +1,12 @@
 import * as path from 'path'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+// @ts-ignore
+import * as client from 'firebase-tools'
 import {createDeployment, Deployment, DeploymentOptions, NowJsonOptions} from 'now-client'
 import signale from 'signale'
 import * as fs from 'fs'
+import {toEnvFormat} from "./utils.js";
 
 const zeitToken = core.getInput('now_token')
 const scope = core.getInput('scope')
@@ -11,16 +14,20 @@ const app = core.getInput('app')
 const appName = core.getInput('app_name')
 const prod = !['', '0', 'false'].includes(core.getInput('prod'))
 const alias = core.getInput('alias')
-const githubToken = core.getInput('github_token')
 const debug = ['1', '0', 'true','false', true, false].includes(core.getInput('debug')) ? Boolean(core.getInput('debug')) : false
+const githubToken = core.getInput('github_token')
+const firebaseToken = core.getInput('firebase_token')
+const firebaseProject = core.getInput('firebase_project')
 
 const octokit = new github.GitHub(githubToken, {
   previews: ['mercy-preview', 'flash-preview', 'ant-man-preview'],
 })
 
+
 const context = github.context
 
-signale.success(JSON.stringify(context.payload, null, 2))
+if(debug)
+  signale.success(JSON.stringify(context.payload, null, 2))
 
 const overrideNowJson = {
   name: appName,
@@ -48,6 +55,9 @@ const defaultJsonOptions = {
     autoAlias: true,
     silent: false,
     autoJobCancelation: true,
+  },
+  build: {
+    env: {}
   },
   public: false,
 }
@@ -115,6 +125,46 @@ const updateDeploymentStatus = async (
   }
 }
 
+
+const resolveEnvVariables = async (requiredKeys: string[]) => {
+
+  const env: {[key:string]: string } = {}
+
+  const fbConfig = await client.setup.web({
+    project: firebaseProject,
+    token: firebaseToken || process.env.FIREBASE_TOKEN,
+  });
+
+  signale.success('Resolved firebase config', fbConfig)
+
+  Object.keys(fbConfig).forEach(key => {
+    // @ts-ignore
+    env[`FIREBASE_${toEnvFormat(key)}`] = fbConfig[key];
+  });
+
+
+  signale.debug(env)
+
+  let missing: string[] = [];
+
+  requiredKeys.forEach((key) => {
+    if(process.env.hasOwnProperty(key)) {
+      signale.fatal(`${key} must be passed to the action as environment variable, seems like it's not the case. This will break deployment.`)
+      missing.push(key);
+    }else {
+      env[key] = process.env[key] || ''
+    }
+  })
+
+
+  if(missing.length > 0) {
+    throw new Error(`Missing env variables block the deployment. \n Check your configuration and declare the variables: \n${missing.join('\n')} `)
+  }
+
+  return env;
+
+}
+
 /**
  * Start deploying
  */
@@ -138,6 +188,13 @@ const deploy = async (): Promise<void> => {
       if(jsonContent) {
         signale.debug('trying to parse ....', JSON.stringify(jsonContent))
         let conf = JSON.parse(jsonContent)
+
+        const env = await resolveEnvVariables(Object.keys(conf.build.env))
+
+        deploymentOptions.build = {
+          env
+        }
+
         signale.debug(JSON.stringify(conf, null, 2))
         finalConfig = Object.assign(defaultJsonOptions, conf, overrideNowJson)
       }
@@ -186,8 +243,6 @@ const deploy = async (): Promise<void> => {
           core.setOutput('environment-url', payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : '')
           core.setOutput('log-url', payload.url ? `https://${payload.url}` : payload.url)
           core.setOutput('deployment-id', deployment.id)
-
-
         }
       }
     } catch (e) {

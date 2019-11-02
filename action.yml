@@ -9,6 +9,14 @@ inputs:
     description: "zeit.co token"
     required: true
 
+  firebase_token:
+    description: "firebase token"
+    required: true
+
+  firebase_project:
+    description: firebase project
+    required: true
+
   app:
     description: "The package app to deploy"
     required: true
