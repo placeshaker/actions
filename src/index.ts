@@ -1,12 +1,9 @@
 import * as path from 'path'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-// @ts-ignore
-import * as client from 'firebase-tools'
 import {createDeployment, Deployment, DeploymentOptions, NowJsonOptions} from 'now-client'
 import signale from 'signale'
 import * as fs from 'fs'
-import {toEnvFormat} from "./utils.js";
 
 const zeitToken = core.getInput('now_token')
 const scope = core.getInput('scope')
@@ -16,8 +13,6 @@ const prod = !['', '0', 'false'].includes(core.getInput('prod'))
 const alias = core.getInput('alias')
 const debug = ['1', '0', 'true','false', true, false].includes(core.getInput('debug')) ? Boolean(core.getInput('debug')) : false
 const githubToken = core.getInput('github_token')
-const firebaseToken = core.getInput('firebase_token')
-const firebaseProject = core.getInput('firebase_project')
 
 const octokit = new github.GitHub(githubToken, {
   previews: ['mercy-preview', 'flash-preview', 'ant-man-preview'],
@@ -129,22 +124,6 @@ const updateDeploymentStatus = async (
 const resolveEnvVariables = async (requiredKeys: string[]) => {
 
   const env: {[key:string]: string } = {}
-
-  const fbConfig = await client.setup.web({
-    project: firebaseProject,
-    token: firebaseToken || process.env.FIREBASE_TOKEN,
-  });
-
-  signale.success('Resolved firebase config', fbConfig)
-
-  Object.keys(fbConfig).forEach(key => {
-    // @ts-ignore
-    env[`FIREBASE_${toEnvFormat(key)}`] = fbConfig[key];
-  });
-
-
-  signale.debug(env)
-
   let missing: string[] = [];
 
   requiredKeys.forEach((key) => {
@@ -162,7 +141,6 @@ const resolveEnvVariables = async (requiredKeys: string[]) => {
   }
 
   return env;
-
 }
 
 /**
