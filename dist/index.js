@@ -7039,7 +7039,9 @@ const app = core.getInput('app');
 const appName = core.getInput('app_name');
 const prod = !['', '0', 'false'].includes(core.getInput('prod'));
 const alias = core.getInput('alias');
-const debug = ['1', '0', 'true', 'false', true, false].includes(core.getInput('debug')) ? Boolean(core.getInput('debug')) : false;
+const debug = ['1', '0', 'true', 'false', true, false].includes(core.getInput('debug'))
+    ? Boolean(core.getInput('debug'))
+    : false;
 const githubToken = core.getInput('github_token');
 const octokit = new github.GitHub(githubToken, {
     previews: ['mercy-preview', 'flash-preview', 'ant-man-preview'],
@@ -7050,7 +7052,7 @@ if (debug)
 const overrideNowJson = {
     name: appName,
     scope,
-    alias: alias.split(',')
+    alias: alias.split(','),
 };
 const defaultJsonOptions = {
     meta: {
@@ -7064,8 +7066,6 @@ const defaultJsonOptions = {
         githubCommitOrg: context.repo.owner,
         githubCommitRepo: context.repo.repo,
         pr: `${context.payload.number}`,
-        // @ts-ignore
-        ref: context.head_ref
     },
     github: {
         enabled: true,
@@ -7074,24 +7074,9 @@ const defaultJsonOptions = {
         autoJobCancelation: true,
     },
     build: {
-        env: {}
+        env: {},
     },
     public: false,
-};
-const deploymentOptions = {
-    version: 2,
-    name: appName,
-    regions: ['bru1'],
-    builds: [
-        {
-            src: 'package.json',
-            use: '@now/next',
-        },
-    ],
-    target: prod ? 'production' : 'staging',
-    token: zeitToken,
-    force: true,
-    debug,
 };
 const createGithubDeployment = async (payload) => {
     try {
@@ -7099,13 +7084,12 @@ const createGithubDeployment = async (payload) => {
         const { data } = await octokit.repos.createDeployment({
             environment: payload.target,
             task: 'deploy',
-            // @ts-ignore
-            ref: context.payload.pull_request.head.ref || context.ref,
+            ref: context.payload.pull_request && context.payload.pull_request.head ? context.payload.pull_request.head.ref : context.ref,
             repo: context.repo.repo,
             owner: context.repo.owner,
             payload: JSON.stringify(payload),
             description: `Deploying ${appName} to ${payload.target}`,
-            production_environment: prod || payload.target === 'production'
+            production_environment: prod || payload.target === 'production',
         });
         signale_1.default.success('Created deployment', data);
         return data;
@@ -7114,15 +7098,15 @@ const createGithubDeployment = async (payload) => {
         signale_1.default.fatal('Error creating deployment', e);
     }
 };
-const updateDeploymentStatus = async (deployment_id, state, environment, log_url, environment_url) => {
+const updateDeploymentStatus = async (deploymentId, state, environment, logUrl, environmentUrl) => {
     try {
         const { data } = await octokit.repos.createDeploymentStatus({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            deployment_id,
-            log_url,
+            deployment_id: deploymentId,
+            log_url: logUrl,
             environment,
-            environment_url,
+            environment_url: environmentUrl,
             state,
         });
         signale_1.default.success('Updated deployment status to', state);
@@ -7135,9 +7119,9 @@ const updateDeploymentStatus = async (deployment_id, state, environment, log_url
 };
 const resolveEnvVariables = async (requiredKeys) => {
     const env = {};
-    let missing = [];
-    requiredKeys.forEach((key) => {
-        if (process.env.hasOwnProperty(key)) {
+    const missing = [];
+    requiredKeys.forEach(key => {
+        if (!process.env[key]) {
             signale_1.default.fatal(`${key} must be passed to the action as environment variable, seems like it's not the case. This will break deployment.`);
             missing.push(key);
         }
@@ -7154,6 +7138,21 @@ const resolveEnvVariables = async (requiredKeys) => {
  * Start deploying
  */
 const deploy = async () => {
+    const deploymentOptions = {
+        version: 2,
+        name: appName,
+        regions: ['bru1'],
+        builds: [
+            {
+                src: 'package.json',
+                use: '@now/next',
+            },
+        ],
+        target: prod ? 'production' : 'staging',
+        token: zeitToken,
+        force: true,
+        debug,
+    };
     signale_1.default.debug('Starting now deployment with data', deploymentOptions);
     const appPath = path.resolve(process.cwd(), app);
     const jsonConfigFile = path.join(appPath, 'now.json');
@@ -7161,24 +7160,24 @@ const deploy = async () => {
     let finalConfig = Object.assign(defaultJsonOptions, overrideNowJson);
     if (fs.existsSync(jsonConfigFile)) {
         signale_1.default.debug('now.json exists, trying to read...');
+        let jsonContent;
         try {
-            const jsonContent = fs.readFileSync(jsonConfigFile, { encoding: 'utf8' });
-            if (jsonContent) {
-                signale_1.default.debug('trying to parse ....', JSON.stringify(jsonContent));
-                let conf = JSON.parse(jsonContent);
-                const env = await resolveEnvVariables(Object.keys(conf.build.env));
-                deploymentOptions.build = {
-                    env
-                };
-                signale_1.default.debug(JSON.stringify(conf, null, 2));
-                finalConfig = Object.assign(defaultJsonOptions, conf, overrideNowJson);
-            }
+            jsonContent = JSON.parse(fs.readFileSync(jsonConfigFile, { encoding: 'utf8' }));
         }
         catch (e) {
-            signale_1.default.fatal("Unable to read now.json, keep going anyway...");
+            signale_1.default.fatal('Unable to read now.json, keep going anyway...');
+        }
+        if (jsonContent) {
+            const env = await resolveEnvVariables(Object.keys(jsonContent.build.env));
+            deploymentOptions.build = {
+                env,
+            };
+            deploymentOptions.env = env;
+            signale_1.default.debug(JSON.stringify(jsonContent, null, 2));
+            finalConfig = Object.assign(defaultJsonOptions, jsonContent, overrideNowJson);
         }
     }
-    console.log(JSON.stringify(finalConfig, null, 2));
+    console.log('FINAL CONF', JSON.stringify(finalConfig, null, 2));
     let deployment;
     for await (const event of now_client_1.createDeployment(appPath, deploymentOptions, finalConfig)) {
         const { payload, type } = event;
