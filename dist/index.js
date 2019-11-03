@@ -7042,10 +7042,6 @@ const alias = core.getInput('alias');
 const debug = ['1', '0', 'true', 'false', true, false].includes(core.getInput('debug'))
     ? Boolean(core.getInput('debug'))
     : false;
-const githubToken = core.getInput('github_token');
-const octokit = new github.GitHub(githubToken, {
-    previews: ['mercy-preview', 'flash-preview', 'ant-man-preview'],
-});
 const context = github.context;
 const overrideNowJson = {
     name: appName,
@@ -7075,45 +7071,6 @@ const defaultJsonOptions = {
         env: {},
     },
     public: false,
-};
-const createGithubDeployment = async (payload) => {
-    try {
-        signale_1.default.debug('Creating github deployment');
-        const { data } = await octokit.repos.createDeployment({
-            environment: payload.target,
-            task: 'deploy',
-            ref: context.payload.pull_request && context.payload.pull_request.head ? context.payload.pull_request.head.ref : context.ref,
-            repo: context.repo.repo,
-            owner: context.repo.owner,
-            payload: JSON.stringify(payload),
-            description: `Deploying ${appName} to ${payload.target}`,
-            production_environment: prod || payload.target === 'production',
-        });
-        signale_1.default.success('Created deployment', data);
-        return data;
-    }
-    catch (e) {
-        signale_1.default.fatal('Error creating deployment', e);
-    }
-};
-const updateDeploymentStatus = async (deploymentId, state, environment, logUrl, environmentUrl) => {
-    try {
-        const { data } = await octokit.repos.createDeploymentStatus({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            deployment_id: deploymentId,
-            log_url: logUrl,
-            environment,
-            environment_url: environmentUrl,
-            state,
-        });
-        signale_1.default.success('Updated deployment status to', state);
-        return data;
-    }
-    catch (e) {
-        signale_1.default.fatal('Error while updating repo state', e);
-        throw e;
-    }
 };
 const resolveEnvVariables = async (requiredKeys) => {
     const env = {};
@@ -7175,27 +7132,14 @@ const deploy = async () => {
             finalConfig = Object.assign(defaultJsonOptions, jsonContent, overrideNowJson);
         }
     }
-    let deployment;
     for await (const event of now_client_1.createDeployment(appPath, deploymentOptions, finalConfig)) {
         const { payload, type } = event;
         try {
-            if (event.type !== 'hashes-calculated') {
-                signale_1.default.debug('Received event ' + event.type);
-                signale_1.default.debug(event.payload);
-            }
-            if (type === 'created') {
-                deployment = await createGithubDeployment(payload);
-            }
-            if (deployment) {
-                if (type === 'error') {
-                    await updateDeploymentStatus(deployment.id, 'error', payload.target, payload.url ? `https://${payload.url}` : undefined, payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : undefined);
-                }
-                else if (type === 'ready') {
-                    await updateDeploymentStatus(deployment.id, 'success', payload.target, payload.url ? `https://${payload.url}` : undefined, payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : undefined);
-                    core.setOutput('environment-url', payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : '');
-                    core.setOutput('log-url', payload.url ? `https://${payload.url}` : payload.url);
-                    core.setOutput('deployment-id', deployment.id);
-                }
+            signale_1.default.debug('Received event ' + event.type);
+            if (type === 'error' || type === 'ready') {
+                core.setOutput('environment-url', payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : '');
+                core.setOutput('log-url', payload.url ? `https://${payload.url}` : payload.url);
+                core.setOutput('deployment-id', payload.id);
             }
         }
         catch (e) {

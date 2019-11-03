@@ -1,7 +1,7 @@
 import * as path from 'path'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {createDeployment, Deployment, DeploymentOptions, NowJsonOptions} from 'now-client'
+import {createDeployment, DeploymentOptions, NowJsonOptions} from 'now-client'
 import signale from 'signale'
 import * as fs from 'fs'
 
@@ -14,11 +14,6 @@ const alias = core.getInput('alias')
 const debug = ['1', '0', 'true', 'false', true, false].includes(core.getInput('debug'))
   ? Boolean(core.getInput('debug'))
   : false
-const githubToken = core.getInput('github_token')
-
-const octokit = new github.GitHub(githubToken, {
-  previews: ['mercy-preview', 'flash-preview', 'ant-man-preview'],
-})
 
 const context = github.context
 
@@ -51,52 +46,6 @@ const defaultJsonOptions = {
     env: {},
   },
   public: false,
-}
-
-const createGithubDeployment = async (payload: Deployment): Promise<any> => {
-  try {
-    signale.debug('Creating github deployment')
-
-    const {data} = await octokit.repos.createDeployment({
-      environment: payload.target,
-      task: 'deploy',
-      ref: context.payload.pull_request && context.payload.pull_request.head ? context.payload.pull_request.head.ref : context.ref,
-      repo: context.repo.repo,
-      owner: context.repo.owner,
-      payload: JSON.stringify(payload),
-      description: `Deploying ${appName} to ${payload.target}`,
-      production_environment: prod || payload.target === 'production',
-    })
-    signale.success('Created deployment', data)
-    return data
-  } catch (e) {
-    signale.fatal('Error creating deployment', e)
-  }
-}
-
-const updateDeploymentStatus = async (
-  deploymentId: number,
-  state: any,
-  environment: any,
-  logUrl?: string,
-  environmentUrl?: string,
-): Promise<any> => {
-  try {
-    const {data} = await octokit.repos.createDeploymentStatus({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      deployment_id: deploymentId,
-      log_url: logUrl,
-      environment,
-      environment_url: environmentUrl,
-      state,
-    })
-    signale.success('Updated deployment status to', state)
-    return data
-  } catch (e) {
-    signale.fatal('Error while updating repo state', e)
-    throw e
-  }
 }
 
 const resolveEnvVariables = async (requiredKeys: string[]): Promise<{[key: string]: string}> => {
@@ -176,41 +125,15 @@ const deploy = async (): Promise<void> => {
     }
   }
 
-  let deployment: any
-
   for await (const event of createDeployment(appPath, deploymentOptions, finalConfig)) {
     const {payload, type} = event
     try {
-      if (event.type !== 'hashes-calculated') {
-        signale.debug('Received event ' + event.type)
-        signale.debug(event.payload)
-      }
+      signale.debug('Received event ' + event.type)
 
-      if (type === 'created') {
-        deployment = await createGithubDeployment(payload)
-      }
-
-      if (deployment) {
-        if (type === 'error') {
-          await updateDeploymentStatus(
-            deployment.id,
-            'error',
-            payload.target,
-            payload.url ? `https://${payload.url}` : undefined,
-            payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : undefined,
-          )
-        } else if (type === 'ready') {
-          await updateDeploymentStatus(
-            deployment.id,
-            'success',
-            payload.target,
-            payload.url ? `https://${payload.url}` : undefined,
-            payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : undefined,
-          )
-          core.setOutput('environment-url', payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : '')
-          core.setOutput('log-url', payload.url ? `https://${payload.url}` : payload.url)
-          core.setOutput('deployment-id', deployment.id)
-        }
+      if (type === 'error' || type === 'ready') {
+        core.setOutput('environment-url', payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : '')
+        core.setOutput('log-url', payload.url ? `https://${payload.url}` : payload.url)
+        core.setOutput('deployment-id', payload.id)
       }
     } catch (e) {
       signale.fatal('Received error', e)
