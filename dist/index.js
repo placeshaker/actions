@@ -7060,6 +7060,7 @@ const defaultJsonOptions = {
         githubCommitOrg: context.repo.owner,
         githubCommitRepo: context.repo.repo,
         pr: `${context.payload.number}`,
+        ref: context.ref,
     },
     github: {
         enabled: true,
@@ -7140,6 +7141,11 @@ const deploy = async () => {
                 core.setOutput('environment-url', payload.alias && payload.alias[0] ? `https://${payload.alias[0]}` : '');
                 core.setOutput('log-url', payload.url ? `https://${payload.url}` : payload.url);
                 core.setOutput('deployment-id', payload.id);
+                core.setOutput('app', scope);
+                core.setOutput('payload', payload);
+            }
+            if (type === 'error') {
+                throw new Error(`Deployment fails with error`);
             }
         }
         catch (e) {
@@ -7147,7 +7153,6 @@ const deploy = async () => {
             throw e;
         }
     }
-    signale_1.default.debug('Getting logs from deployment');
 };
 deploy().catch(error => {
     signale_1.default.fatal(error);

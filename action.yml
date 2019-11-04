@@ -49,6 +49,11 @@ outputs:
   deployment-id:
     description: "Deployment ID"
 
+  app:
+    description: the app throwing this deployment
+
+  payload:
+    description: last payload with all data from deployment
 
 runs:
   using: node12
