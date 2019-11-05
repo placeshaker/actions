@@ -107,7 +107,6 @@ const deploy = async (): Promise<void> => {
     token: zeitToken,
     force: true,
     debug,
-    teamId: scope,
   }
   signale.debug('Starting now deployment with data')
 

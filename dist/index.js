@@ -7117,7 +7117,6 @@ const deploy = async () => {
         token: zeitToken,
         force: true,
         debug,
-        teamId: scope,
     };
     signale_1.default.debug('Starting now deployment with data');
     const githubMetas = await resolveGithubMetas();
