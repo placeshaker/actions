@@ -43,7 +43,7 @@ const resolveGithubMetas = async () => {
   const { data: { commit }} = await octokit.repos.getCommit({
     ...context.repo,
     // @ts-ignore
-    ref: context.head_ref
+    ref: context.head_ref || context.payload.pull_request.head.ref || context.sha
   })
 
   return {
