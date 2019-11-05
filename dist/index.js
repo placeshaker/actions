@@ -7033,6 +7033,7 @@ const github = __importStar(__webpack_require__(469));
 const now_client_1 = __webpack_require__(380);
 const signale_1 = __importDefault(__webpack_require__(759));
 const fs = __importStar(__webpack_require__(747));
+const githubToken = core.getInput('github_token');
 const zeitToken = core.getInput('now_token');
 const scope = core.getInput('scope');
 const app = core.getInput('app');
@@ -7043,25 +7044,13 @@ const debug = ['1', '0', 'true', 'false', true, false].includes(core.getInput('d
     ? Boolean(core.getInput('debug'))
     : false;
 const context = github.context;
+const octokit = new github.GitHub(githubToken);
 const overrideNowJson = {
     name: appName,
     scope,
     alias: alias.split(','),
 };
 const defaultJsonOptions = {
-    meta: {
-        name: `pr-${context.payload.number}`,
-        githubCommitSha: context.sha,
-        githubCommitAuthorName: context.actor,
-        githubCommitAuthorLogin: context.actor,
-        githubDeployment: '1',
-        githubOrg: context.repo.owner,
-        githubRepo: context.repo.repo,
-        githubCommitOrg: context.repo.owner,
-        githubCommitRepo: context.repo.repo,
-        pr: `${context.payload.number}`,
-        ref: context.ref,
-    },
     github: {
         enabled: true,
         autoAlias: true,
@@ -7072,6 +7061,26 @@ const defaultJsonOptions = {
         env: {},
     },
     public: false,
+};
+const resolveGithubMetas = async () => {
+    const { data: { commit } } = await octokit.repos.getCommit({
+        ...context.repo,
+        commit_sha: context.sha
+    });
+    return {
+        name: `pr-${context.payload.number}`,
+        githubCommitSha: context.sha,
+        githubCommitAuthorName: context.actor,
+        githubCommitAuthorLogin: context.actor,
+        githubDeployment: '1',
+        githubOrg: context.repo.owner,
+        githubRepo: context.repo.repo,
+        githubCommitOrg: context.repo.owner,
+        githubCommitRepo: context.repo.repo,
+        githubCommitMessage: commit.message,
+        // @ts-ignore
+        githubCommitRef: context.head_ref || context.ref || context.payload.ref,
+    };
 };
 const resolveEnvVariables = async (requiredKeys) => {
     const env = {};
@@ -7108,12 +7117,14 @@ const deploy = async () => {
         token: zeitToken,
         force: true,
         debug,
+        teamId: scope,
     };
     signale_1.default.debug('Starting now deployment with data');
+    const githubMetas = await resolveGithubMetas();
     const appPath = path.resolve(process.cwd(), app);
     const jsonConfigFile = path.join(appPath, 'now.json');
     signale_1.default.debug('Trying to read now.json');
-    let finalConfig = Object.assign(defaultJsonOptions, overrideNowJson);
+    let finalConfig = Object.assign(defaultJsonOptions, overrideNowJson, { meta: githubMetas });
     if (fs.existsSync(jsonConfigFile)) {
         signale_1.default.debug('now.json exists, trying to read...');
         let jsonContent;
@@ -7133,6 +7144,7 @@ const deploy = async () => {
             finalConfig = Object.assign(defaultJsonOptions, jsonContent, overrideNowJson);
         }
     }
+    console.log(finalConfig);
     for await (const event of now_client_1.createDeployment(appPath, deploymentOptions, finalConfig)) {
         const { payload, type } = event;
         try {

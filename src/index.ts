@@ -5,6 +5,7 @@ import {createDeployment, DeploymentOptions, NowJsonOptions} from 'now-client'
 import signale from 'signale'
 import * as fs from 'fs'
 
+const githubToken = core.getInput('github_token')
 const zeitToken = core.getInput('now_token')
 const scope = core.getInput('scope')
 const app = core.getInput('app')
@@ -16,6 +17,7 @@ const debug = ['1', '0', 'true', 'false', true, false].includes(core.getInput('d
   : false
 
 const context = github.context
+const octokit = new github.GitHub(githubToken)
 
 const overrideNowJson = {
   name: appName,
@@ -24,19 +26,6 @@ const overrideNowJson = {
 }
 
 const defaultJsonOptions = {
-  meta: {
-    name: `pr-${context.payload.number}`,
-    githubCommitSha: context.sha,
-    githubCommitAuthorName: context.actor,
-    githubCommitAuthorLogin: context.actor,
-    githubDeployment: '1',
-    githubOrg: context.repo.owner,
-    githubRepo: context.repo.repo,
-    githubCommitOrg: context.repo.owner,
-    githubCommitRepo: context.repo.repo,
-    pr: `${context.payload.number}`,
-    ref: context.ref,
-  },
   github: {
     enabled: true,
     autoAlias: true,
@@ -47,6 +36,31 @@ const defaultJsonOptions = {
     env: {},
   },
   public: false,
+}
+
+const resolveGithubMetas = async () => {
+
+  const { data: { commit }} = await octokit.repos.getCommit({
+    ...context.repo,
+    commit_sha: context.sha
+  })
+
+  return {
+    name: `pr-${context.payload.number}`,
+    githubCommitSha: context.sha,
+    githubCommitAuthorName: context.actor,
+    githubCommitAuthorLogin: context.actor,
+    githubDeployment: '1',
+    githubOrg: context.repo.owner,
+    githubRepo: context.repo.repo,
+    githubCommitOrg: context.repo.owner,
+    githubCommitRepo: context.repo.repo,
+    githubCommitMessage: commit.message,
+    // @ts-ignore
+    githubCommitRef: context.head_ref || context.ref || context.payload.ref,
+  }
+
+
 }
 
 const resolveEnvVariables = async (requiredKeys: string[]): Promise<{[key: string]: string}> => {
@@ -93,15 +107,19 @@ const deploy = async (): Promise<void> => {
     token: zeitToken,
     force: true,
     debug,
+    teamId: scope,
   }
   signale.debug('Starting now deployment with data')
+
+
+  const githubMetas = await resolveGithubMetas()
 
   const appPath = path.resolve(process.cwd(), app)
   const jsonConfigFile = path.join(appPath, 'now.json')
 
   signale.debug('Trying to read now.json')
 
-  let finalConfig: NowJsonOptions = Object.assign(defaultJsonOptions, overrideNowJson)
+  let finalConfig: NowJsonOptions = Object.assign(defaultJsonOptions, overrideNowJson, { meta: githubMetas })
 
   if (fs.existsSync(jsonConfigFile)) {
     signale.debug('now.json exists, trying to read...')
@@ -122,9 +140,12 @@ const deploy = async (): Promise<void> => {
       deploymentOptions.env = env
 
       signale.debug(JSON.stringify(jsonContent, null, 2))
-      finalConfig = Object.assign(defaultJsonOptions, jsonContent, overrideNowJson)
+
+      finalConfig = Object.assign(defaultJsonOptions, jsonContent, overrideNowJson, )
     }
   }
+
+  console.log(finalConfig)
 
   for await (const event of createDeployment(appPath, deploymentOptions, finalConfig)) {
     const {payload, type} = event
