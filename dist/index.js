@@ -7065,7 +7065,8 @@ const defaultJsonOptions = {
 const resolveGithubMetas = async () => {
     const { data: { commit } } = await octokit.repos.getCommit({
         ...context.repo,
-        commit_sha: context.sha
+        // @ts-ignore
+        ref: context.head_ref
     });
     return {
         name: `pr-${context.payload.number}`,
