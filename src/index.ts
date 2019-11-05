@@ -43,12 +43,13 @@ const resolveGithubMetas = async () => {
   const { data: { commit }} = await octokit.repos.getCommit({
     ...context.repo,
     // @ts-ignore
-    ref: context.head_ref || context.payload.pull_request.head.ref || context.sha
+    ref: context.payload.pull_request.head.ref || context.sha
   })
 
   return {
     name: `pr-${context.payload.number}`,
-    githubCommitSha: context.sha,
+    // @ts-ignore
+    githubCommitSha: context.payload.pull_request.head.sha || context.sha,
     githubCommitAuthorName: context.actor,
     githubCommitAuthorLogin: context.actor,
     githubDeployment: '1',
@@ -58,7 +59,7 @@ const resolveGithubMetas = async () => {
     githubCommitRepo: context.repo.repo,
     githubCommitMessage: commit.message,
     // @ts-ignore
-    githubCommitRef: context.head_ref || context.ref || context.payload.ref,
+    githubCommitRef: context.payload.pull_request.head.ref || context.sha,
   }
 
 
